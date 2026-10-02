@@ -1146,7 +1146,7 @@ struct SettingsView: View {
                     }
                     .labelsHidden()
                     .pickerStyle(.segmented)
-                    .frame(width: 200)
+                    .fixedSize()
                 }
 
                 Divider()
@@ -1176,7 +1176,7 @@ struct SettingsView: View {
                         }
                         .labelsHidden()
                         .pickerStyle(.segmented)
-                        .frame(width: 200)
+                        .fixedSize()
                     }
                 }
 
@@ -1194,7 +1194,7 @@ struct SettingsView: View {
                     }
                     .labelsHidden()
                     .pickerStyle(.segmented)
-                    .frame(width: 200)
+                    .fixedSize()
                 }
 
                 Divider()
