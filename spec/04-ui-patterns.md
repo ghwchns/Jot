@@ -488,7 +488,7 @@ Persistent floating pill centered on the bottom (default) or top edge of the scr
 
 - **Collapsed:** 48×10pt dark grey capsule (subtle nub)
 - **Expanded (hover):** 148×30pt dark capsule with dots + tooltip on the screen-facing side (above at the bottom edge, below at the top)
-- **Position:** Drag the idle pill or the center of the recording pill to move it. Idle and recording share one saved screen-relative anchor across recordings and app launches. The meeting pill owns a separate saved anchor and can also be dragged. Restoration keeps each panel in the usable screen region, including when its display disappears or changes resolution. Settings → Dictation → Pill position retains Top/Bottom edge defaults; selecting an edge resets the dictation position. “Reset pill positions” restores both pills to their defaults. No hold, timer, or keyboard behavior is added.
+- **Position:** Drag the idle pill or the center of the recording pill to move it. Idle and recording share one saved screen-relative anchor across recordings and app launches. The meeting pill owns a separate saved anchor and can also be dragged. Idle and meeting click actions run on release only when the pointer has not dragged; moving a pill must not start dictation or open a window. Restoration keeps each panel in the usable screen region, including when its display disappears or changes resolution. Settings → Dictation → Pill position retains Top/Bottom edge defaults; selecting an edge resets the dictation position. “Reset pill positions” restores both pills to their defaults. No hold, timer, or keyboard behavior is added.
 - **Panel:** NSPanel, `.nonactivatingPanel`, `.borderless`, `.floating` level
 
 ### States

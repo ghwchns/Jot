@@ -8,7 +8,7 @@ import MacParakeetViewModels
 /// NSView overlay that detects mouse hover and clicks for the idle pill.
 /// Uses mouseMoved to precisely track whether the cursor is over the pill region,
 /// not the entire panel. The hover rect changes based on expanded state.
-final class IdlePillTrackingView: NSView {
+final class IdlePillTrackingView: FloatingPillInteractionView {
     var onEnter: (() -> Void)?
     var onExit: (() -> Void)?
     var onClicked: (() -> Void)?
@@ -67,15 +67,14 @@ final class IdlePillTrackingView: NSView {
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         let activeRect = isExpanded ? expandedPillRect : collapsedPillRect
-        if activeRect.contains(point) {
-            guard let window else { return }
-            let origin = window.frame.origin
-            window.performDrag(with: event)
-            if window.frame.origin == origin { onClicked?() }
-        }
+        guard activeRect.contains(point) else { return }
+        super.mouseDown(with: event)
     }
 
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override func pillClicked(at point: CGPoint) {
+        let activeRect = isExpanded ? expandedPillRect : collapsedPillRect
+        if activeRect.contains(point) { onClicked?() }
+    }
 
     // Only intercept clicks in the visible pill region; pass through everywhere else.
     override func hitTest(_ point: NSPoint) -> NSView? {

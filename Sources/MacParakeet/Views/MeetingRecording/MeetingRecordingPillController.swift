@@ -117,7 +117,6 @@ final class MeetingRecordingPillController {
         panel.hasShadow = false
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.isMovableByWindowBackground = true
         panel.contentView = contentView
 
         panel.restorePillPosition()
@@ -355,7 +354,7 @@ final class MeetingRecordingPillController {
     }
 }
 
-final class MeetingRecordingAppKitPillView: NSView {
+final class MeetingRecordingAppKitPillView: FloatingPillInteractionView {
     private let viewModel: MeetingRecordingPillViewModel
     private let onTap: () -> Void
     private let iconView = MerkabaPillIconView()
@@ -484,14 +483,9 @@ final class MeetingRecordingAppKitPillView: NSView {
         updateTimeBadge()
     }
 
-    override func mouseDown(with event: NSEvent) {
-        guard let window else { return }
-        let origin = window.frame.origin
-        window.performDrag(with: event)
-        if window.frame.origin == origin { onTap() }
+    override func pillClicked(at point: CGPoint) {
+        if bounds.contains(point) { onTap() }
     }
-
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     // The glyph is decorative; this view owns the first click and drag even
     // when the pointer lands directly on that child.
