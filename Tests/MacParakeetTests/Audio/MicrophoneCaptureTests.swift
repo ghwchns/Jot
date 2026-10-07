@@ -69,6 +69,28 @@ final class MicrophoneCaptureTests: XCTestCase {
         XCTAssertEqual(counter.value, 2)
     }
 
+    func testFirstBufferDiagnosticsUsesDeliveredFormatWithoutPlatformQuery() async throws {
+        let platform = SharedMicTestPlatform()
+        let stream = SharedMicrophoneStream(platform: platform, bufferSize: 1024)
+        let capture = MicrophoneCapture(sharedStream: stream, permissionProvider: { true })
+        let counter = MicrophoneCaptureTestCounter()
+        _ = try await capture.start(processingMode: .raw, handler: { _, _ in counter.increment() }, onStall: nil)
+        addTeardownBlock { await capture.stop() }
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 256))
+        buffer.frameLength = 256
+        let beforeDiagnostics = currentDiagnosticsLogContents()
+        let formatQueriesBeforeCallback = platform.inputFormatReadCount
+
+        platform.deliverBuffer(buffer, time: AVAudioTime(hostTime: 0))
+
+        XCTAssertEqual(counter.value, 1, "First-buffer delivery must complete without querying the lifecycle queue.")
+        XCTAssertEqual(platform.inputFormatReadCount, formatQueriesBeforeCallback)
+        let line = try await waitForDiagnosticsLine(containing: "meeting_mic_first_buffer", after: beforeDiagnostics)
+        XCTAssertTrue(line.contains("sr=24000.0"), "Diagnostics must report the delivered capture profile.")
+        XCTAssertTrue(line.contains("ch=1"))
+    }
+
     func testEarlyFirstBufferBeforeWatchdogArmedDoesNotReportStall() async throws {
         let platform = SharedMicTestPlatform()
         let stream = SharedMicrophoneStream(platform: platform, bufferSize: 1024)
@@ -863,6 +885,7 @@ private final class SharedMicTestPlatform: MicrophoneEnginePlatform, @unchecked 
     private var _isRunning = false
     private var _configureCalls: [ConfigureCall] = []
     private var _stopCount = 0
+    private var _inputFormatReadCount = 0
     private var _tapHandler: (@Sendable (AVAudioPCMBuffer, AVAudioTime) -> Void)?
     private var _unexpectedStopHandler: (@Sendable () -> Void)?
     var configureAndStartError: Error?
@@ -897,8 +920,11 @@ private final class SharedMicTestPlatform: MicrophoneEnginePlatform, @unchecked 
     }
 
     var inputFormat: AVAudioFormat? {
-        AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1)
+        lock.withLock { _inputFormatReadCount += 1 }
+        return AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1)
     }
+
+    var inputFormatReadCount: Int { lock.withLock { _inputFormatReadCount } }
 
     var configureAndStartCalls: [ConfigureCall] {
         lock.withLock { _configureCalls }

@@ -528,7 +528,7 @@ public final class MicrophoneCapture: @unchecked Sendable {
         generation: Int
     ) {
         guard hasActiveHandlers(generation: generation) else { return }
-        markFirstBufferReceived(generation: generation)
+        markFirstBufferReceived(generation: generation, format: buffer.format)
         let deliveredBuffer: AVAudioPCMBuffer
         deliveredBuffer =
             microphoneCaptureMonoBuffer(
@@ -633,7 +633,7 @@ public final class MicrophoneCapture: @unchecked Sendable {
         }
     }
 
-    private func markFirstBufferReceived(generation: Int) {
+    private func markFirstBufferReceived(generation: Int, format: AVAudioFormat) {
         let shouldLog = watchdogLock.withLock {
             guard watchdogGeneration == generation else { return false }
             guard firstBufferSeenGeneration != generation else { return false }
@@ -644,10 +644,11 @@ public final class MicrophoneCapture: @unchecked Sendable {
         }
         if shouldLog {
             logger.info("microphone_capture_first_buffer_received")
-            let format = inputFormat
-            let firstBufferSampleRate = format?.sampleRate ?? 0
-            let firstBufferChannelCount = format?.channelCount ?? 0
-            let firstBufferInterleaved = format?.isInterleaved ?? false
+            // A capture callback must never wait on the platform's lifecycle
+            // queue: Stop may own that queue while draining this callback.
+            let firstBufferSampleRate = format.sampleRate
+            let firstBufferChannelCount = format.channelCount
+            let firstBufferInterleaved = format.isInterleaved
             AudioCaptureDiagnostics.appendAsync(
                 "meeting_mic_first_buffer sr=\(firstBufferSampleRate) ch=\(firstBufferChannelCount) interleaved=\(firstBufferInterleaved)"
             )

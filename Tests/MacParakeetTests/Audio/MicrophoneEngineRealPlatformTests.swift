@@ -544,6 +544,159 @@ final class MicrophoneEngineRealPlatformTests: XCTestCase {
         )
     }
 
+    /// A named microphone must never acquire the default Bluetooth microphone,
+    /// including preparation and teardown. Requires Bluetooth input/output to
+    /// already be selected; deliberately does not change the user's routing.
+    func testNamedMicrophonePreservesBluetoothPlayback() async throws {
+        guard let defaultInput = AudioDeviceManager.defaultInputDeviceInfo(), defaultInput.isBluetooth,
+            let builtIn = AudioDeviceManager.builtInMicrophone(),
+            let uid = AudioDeviceManager.deviceUID(builtIn)
+        else { throw XCTSkip("Select Bluetooth as system input/output and connect a built-in microphone.") }
+        let output = try defaultOutputDevice()
+        try XCTSkipUnless(AudioDeviceManager.isBluetoothInput(output), "Need Bluetooth output.")
+        let baselineRate = try nominalSampleRate(output)
+        try XCTSkipUnless(baselineRate >= 44_100, "Close other apps holding the Bluetooth microphone.")
+        let microphoneRate = try nominalSampleRate(builtIn)
+        let attempt = MeetingInputDeviceAttempt(source: .selected(uid: uid), deviceID: builtIn)
+        platform = AVAudioEngineMicrophonePlatform(deviceAttemptsBuilder: { [attempt] })
+        let counter = OSAllocatedUnfairLock(initialState: 0)
+
+        for cycle in 0..<3 {
+            if cycle != 1 {
+                platform.prepare(vpioEnabled: false, bufferSize: Self.bufferSize, tapHandler: { _, _ in })
+                try await Task.sleep(for: .milliseconds(300))
+                XCTAssertTrue(platform.preparedEngineStateForTesting.prepared)
+                XCTAssertEqual(try nominalSampleRate(output), baselineRate, "Idle preparation must preserve playback.")
+            }
+            let before = counter.withLock { $0 }
+            try platform.configureAndStart(vpioEnabled: false, bufferSize: Self.bufferSize) { _, _ in
+                counter.withLock { $0 += 1 }
+            }
+            let delivered = try await awaitCounterIncrease(counter: counter, from: before, timeout: 2)
+            XCTAssertGreaterThan(delivered, before)
+            try await Task.sleep(for: .milliseconds(300))
+            XCTAssertEqual(platform.inputFormat?.sampleRate, microphoneRate)
+            XCTAssertEqual(try nominalSampleRate(output), baselineRate, "Active dictation must preserve playback.")
+            XCTAssertEqual(AudioDeviceManager.defaultInputDevice(), defaultInput.id)
+            XCTAssertEqual(try defaultOutputDevice(), output)
+            platform.stopEngine()
+            let stoppedCount = counter.withLock { $0 }
+            try await Task.sleep(for: .milliseconds(300))
+            XCTAssertEqual(counter.withLock { $0 }, stoppedCount, "Stop must retire sample callbacks.")
+            XCTAssertEqual(try nominalSampleRate(output), baselineRate, "Teardown must not acquire Bluetooth input.")
+        }
+    }
+
+    /// Opt-in explicit Bluetooth route regression. It never changes HAL defaults
+    /// and retains only signal counters, not microphone audio. Run with a known
+    /// connected input UID in MACPARAKEET_SELECTED_BLUETOOTH_TEST_UID after
+    /// coordinating access with other microphone users.
+    func testSelectedBluetoothCaptureSharesBuffersAndRetiresOnStop() async throws {
+        guard let uid = ProcessInfo.processInfo.environment["MACPARAKEET_SELECTED_BLUETOOTH_TEST_UID"],
+            let device = AudioDeviceManager.inputDevices().first(where: { $0.uid == uid })
+        else { throw XCTSkip("Set MACPARAKEET_SELECTED_BLUETOOTH_TEST_UID to a connected microphone UID.") }
+        try XCTSkipUnless(device.isBluetooth, "This regression requires an explicitly selected Bluetooth input.")
+        let originalInput = AudioDeviceManager.defaultInputDevice()
+        let originalOutput = try defaultOutputDevice()
+        let attempt = MeetingInputDeviceAttempt(source: .selected(uid: uid), deviceID: device.id)
+        platform = AVAudioEngineMicrophonePlatform(
+            deviceAttemptsBuilder: { [attempt] },
+            // A selected raw route must not pin AVAudioEngine's input node.
+            inputDeviceSetter: { _, _ in false }
+        )
+        platform.prepare(vpioEnabled: false, bufferSize: Self.bufferSize, tapHandler: { _, _ in })
+        XCTAssertFalse(platform.preparedEngineStateForTesting.prepared, "Bluetooth must remain closed while idle.")
+        let stream = SharedMicrophoneStream(platform: platform, bufferSize: Self.bufferSize)
+
+        for cycle in 0..<2 {
+            let firstCounter = OSAllocatedUnfairLock(initialState: 0)
+            let secondCounter = OSAllocatedUnfairLock(initialState: 0)
+            let signal = OSAllocatedUnfairLock(initialState: (frames: 0, nonzero: 0, invalid: 0, rate: 0.0))
+            var tokens: [SharedMicrophoneStream.SubscriberToken] = []
+            do {
+                tokens.append(try await stream.subscribe(wantsVPIO: false) { buffer, _ in
+                    firstCounter.withLock { $0 += 1 }
+                    signal.withLock { state in
+                        state.frames += Int(buffer.frameLength)
+                        state.rate = buffer.format.sampleRate
+                        guard let channels = buffer.floatChannelData else {
+                            state.invalid += 1
+                            return
+                        }
+                        for channel in 0..<Int(buffer.format.channelCount) {
+                            for frame in 0..<Int(buffer.frameLength) {
+                                let value = channels[channel][frame]
+                                if !value.isFinite { state.invalid += 1 }
+                                else if value != 0 { state.nonzero += 1 }
+                            }
+                        }
+                    }
+                })
+                tokens.append(try await stream.subscribe(wantsVPIO: false) { _, _ in
+                    secondCounter.withLock { $0 += 1 }
+                })
+                let secondCount = try await awaitCounterIncrease(
+                    counter: secondCounter, from: 0, timeout: Self.firstBufferDeadline
+                )
+                XCTAssertGreaterThan(firstCounter.withLock { $0 }, 0)
+                XCTAssertGreaterThan(secondCount, 0, "Both shared consumers must receive the selected input.")
+                XCTAssertEqual(platform.lastSucceededAttempt, attempt, "No implicit fallback may certify this route.")
+                XCTAssertEqual(stream.diagnostics.subscriberCount, 2)
+                try await Task.sleep(for: .milliseconds(300))
+                let firstToken = tokens.removeFirst()
+                await stream.unsubscribe(firstToken)
+                let afterFirstLeaves = secondCounter.withLock { $0 }
+                let remainingCount = try await awaitCounterIncrease(
+                    counter: secondCounter, from: afterFirstLeaves, timeout: 1
+                )
+                XCTAssertGreaterThan(
+                    remainingCount, afterFirstLeaves,
+                    "The remaining consumer must keep receiving audio."
+                )
+                let observed = signal.withLock { $0 }
+                XCTAssertGreaterThan(observed.frames, 0)
+                XCTAssertGreaterThan(observed.nonzero, 0, "Exact-zero Bluetooth input must not pass readiness.")
+                XCTAssertEqual(observed.invalid, 0)
+                XCTAssertEqual(platform.inputFormat?.sampleRate, observed.rate)
+                print("selected_bluetooth_hardware cycle=\(cycle) frames=\(observed.frames) nonzero=\(observed.nonzero) invalid=\(observed.invalid) sample_rate=\(observed.rate)")
+            } catch {
+                await unsubscribeAll(&tokens, from: stream)
+                throw error
+            }
+            await unsubscribeAll(&tokens, from: stream)
+            XCTAssertFalse(platform.isEngineRunning)
+            let stoppedCount = secondCounter.withLock { $0 }
+            try await Task.sleep(for: .milliseconds(100))
+            XCTAssertEqual(secondCounter.withLock { $0 }, stoppedCount, "Stop must retire queued capture callbacks.")
+            XCTAssertEqual(AudioDeviceManager.defaultInputDevice(), originalInput)
+            XCTAssertEqual(try defaultOutputDevice(), originalOutput)
+        }
+    }
+
+    private func defaultOutputDevice() throws -> AudioDeviceID {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain
+        )
+        var device: AudioDeviceID = 0
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        let status = AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device)
+        guard status == noErr else { throw NSError(domain: NSOSStatusErrorDomain, code: Int(status)) }
+        return device
+    }
+
+    private func nominalSampleRate(_ device: AudioDeviceID) throws -> Double {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyNominalSampleRate,
+            mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain
+        )
+        var rate: Float64 = 0
+        var size = UInt32(MemoryLayout<Float64>.size)
+        let status = AudioObjectGetPropertyData(device, &address, 0, nil, &size, &rate)
+        guard status == noErr else { throw NSError(domain: NSOSStatusErrorDomain, code: Int(status)) }
+        return rate
+    }
+
     // MARK: - Helpers
 
     /// Configure the platform, install a counting tap, and return the buffer
