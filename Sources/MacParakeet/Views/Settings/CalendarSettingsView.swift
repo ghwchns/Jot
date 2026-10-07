@@ -49,7 +49,7 @@ struct CalendarSettingsView: View {
                 Text("Calendar accounts")
                     .font(DesignSystem.Typography.body)
                 Text(
-                    "MacParakeet reads calendars added to this Mac, including Microsoft 365 and Exchange. Add accounts in System Settings → Internet Accounts; you can keep using Outlook."
+                    "Jot reads calendars added to this Mac, including Microsoft 365 and Exchange. Add accounts in System Settings → Internet Accounts; you can keep using Outlook."
                 )
                 .font(DesignSystem.Typography.caption)
                 .foregroundStyle(.secondary)
@@ -128,7 +128,7 @@ struct CalendarSettingsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Notifications are off")
                     .font(DesignSystem.Typography.body)
-                Text("Calendar reminders won't appear until you allow MacParakeet notifications in System Settings.")
+                Text("Calendar reminders won't appear until you allow Jot notifications in System Settings.")
                     .font(DesignSystem.Typography.caption)
                     .foregroundStyle(.secondary)
             }
@@ -176,9 +176,11 @@ struct CalendarSettingsView: View {
             // macOS only shows the EventKit prompt once. Once denied, the
             // only path back is System Settings — a button that can't actually
             // re-prompt would mystify the user, so point them there explicitly.
-            return "Calendar access is blocked. Re-enable it in System Settings → Privacy & Security → Calendars to start meetings automatically."
+            return
+                "Calendar access is blocked. Re-enable it in System Settings → Privacy & Security → Calendars to start meetings automatically."
         case .notDetermined:
-            return "Start a recording when a scheduled meeting begins. Needs Calendar access — your events stay on your Mac and are never uploaded."
+            return
+                "Start a recording when a scheduled meeting begins. Needs Calendar access — your events stay on your Mac and are never uploaded."
         }
     }
 

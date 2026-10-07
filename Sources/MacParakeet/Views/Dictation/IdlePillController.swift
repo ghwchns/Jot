@@ -24,11 +24,12 @@ private final class IdlePillTrackingView: NSView {
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         trackingAreas.forEach { removeTrackingArea($0) }
-        addTrackingArea(NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
-            owner: self
-        ))
+        addTrackingArea(
+            NSTrackingArea(
+                rect: bounds,
+                options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
+                owner: self
+            ))
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -67,7 +68,10 @@ private final class IdlePillTrackingView: NSView {
         let point = convert(event.locationInWindow, from: nil)
         let activeRect = isExpanded ? expandedPillRect : collapsedPillRect
         if activeRect.contains(point) {
-            onClicked?()
+            guard let window else { return }
+            let origin = window.frame.origin
+            window.performDrag(with: event)
+            if window.frame.origin == origin { onClicked?() }
         }
     }
 
@@ -84,7 +88,7 @@ private final class IdlePillTrackingView: NSView {
 /// Non-activating NSPanel that never steals focus.
 @MainActor
 final class IdlePillController {
-    private var panel: NSPanel?
+    private var panel: FloatingPillPanel?
     private var hostingView: NSHostingView<IdlePillView>?
     private var trackingView: IdlePillTrackingView?
 
@@ -107,12 +111,7 @@ final class IdlePillController {
         let panelHeight: CGFloat = 90
         hosting.frame = NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight)
 
-        let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
-            styleMask: [.nonactivatingPanel, .borderless],
-            backing: .buffered,
-            defer: false
-        )
+        let panel = FloatingPillPanel(role: .dictation, size: CGSize(width: panelWidth, height: panelHeight))
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
@@ -161,7 +160,7 @@ final class IdlePillController {
         trackingView.collapsedPillRect = edgeRect(width: 60, height: 24)
         trackingView.expandedPillRect = edgeRect(width: 320, height: 80)
 
-        panel.moveToDictationOverlayPosition(placement: placement)
+        panel.restorePillPosition()
     }
 
     func hide() {

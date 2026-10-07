@@ -91,7 +91,7 @@ struct VoiceProfilesSheet: View {
             Text("No voices saved yet")
                 .font(DesignSystem.Typography.body.weight(.semibold))
             Text(
-                "Rename a speaker in a meeting transcript, then choose \"Remember\" when MacParakeet offers. Saved voices are suggested in later meetings, and never applied without your confirmation."
+                "Rename a speaker in a meeting transcript, then choose \"Remember\" when Jot offers. Saved voices are suggested in later meetings, and never applied without your confirmation."
             )
             .font(DesignSystem.Typography.caption)
             .foregroundStyle(.secondary)

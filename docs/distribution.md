@@ -2,7 +2,8 @@
 
 > Status: **ACTIVE** - Build, sign, notarize, and auto-update workflow
 
-The personal Jot fork builds with `APP_NAME=Jot PERSONAL_BUILD=1 VERSION=0.8.9`.
+The personal Jot fork defaults to `APP_NAME=Jot PERSONAL_BUILD=1`; its first
+candidate retains `VERSION=0.8.9`. Signing credentials are supplied locally.
 `PERSONAL_BUILD=1` marks the bundle explicitly and blocks both manual and
 automatic Sparkle checks and relaunches, so the official feed cannot replace
 the fork. Updates are applied manually after upstream review. The bundle ID

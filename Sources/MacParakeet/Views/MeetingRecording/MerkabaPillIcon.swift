@@ -136,12 +136,12 @@ final class MerkabaPillIconView: NSView {
     /// dim when paused/idle so the mark reads as "quiet".
     private var glowBase: Float { currentAnimating ? 0.4 : 0.1 }
 
-    private let successGreen = NSColor(red: 0.20, green: 0.66, blue: 0.33, alpha: 1)
-    private let completionGold = NSColor(red: 1.0, green: 0.85, blue: 0.4, alpha: 1)
+    private let successGreen = NSColor(white: 0.82, alpha: 1)
+    private let completionGold = NSColor(white: 0.95, alpha: 1)
     /// Metatron palette: living green during the build, ripening to sacred gold
     /// at full bloom (the "halo" peak), before resolving to the green checkmark.
-    private let metatronGreen = NSColor(red: 0.42, green: 0.86, blue: 0.48, alpha: 1)
-    private let metatronGold = NSColor(red: 1.0, green: 0.82, blue: 0.38, alpha: 1)
+    private let metatronGreen = NSColor(white: 0.82, alpha: 1)
+    private let metatronGold = NSColor(white: 0.95, alpha: 1)
 
     override var isFlipped: Bool { true }
 

@@ -262,7 +262,7 @@ final class MeetingAutoStartCoordinator {
     private func knownEventsForSkip() -> [CalendarEvent] {
         var events = latestPolledEvents
         if let owning = countdownOwningEvent,
-           !events.contains(where: { $0.dedupeKey == owning.dedupeKey })
+            !events.contains(where: { $0.dedupeKey == owning.dedupeKey })
         {
             events.append(owning)
         }
@@ -388,7 +388,8 @@ final class MeetingAutoStartCoordinator {
         // Soonest *future* start — drives auto-start window accuracy. With
         // auto-stop removed, the next start is the only thing the cadence
         // needs to track.
-        let nextStart = events
+        let nextStart =
+            events
             .filter { $0.startTime > now }
             .map { $0.startTime.timeIntervalSince(now) }
             .min()
@@ -476,10 +477,11 @@ final class MeetingAutoStartCoordinator {
         // Fire telemetry *after* `showAutoStart` returns so the event name
         // matches what the user actually saw — its docstring says "fires
         // when the toast is presented."
-        Telemetry.send(.calendarAutoStartTriggered(
-            leadSeconds: leadSeconds,
-            hasMeetUrl: event.meetUrl != nil
-        ))
+        Telemetry.send(
+            .calendarAutoStartTriggered(
+                leadSeconds: leadSeconds,
+                hasMeetUrl: event.meetUrl != nil
+            ))
     }
 
     /// Internal entry point for the auto-start outcome routing. Public to
@@ -507,10 +509,14 @@ final class MeetingAutoStartCoordinator {
                 // auto-start window [start-5s, start+30s]; later than that is
                 // Phase-3 late-join territory.
                 countdownShownEventIds.remove(event.dedupeKey)
-                logger.info("Auto-start rejected (state busy) for event id=\(event.id, privacy: .public) — will retry after current recording ends")
+                logger.info(
+                    "Auto-start rejected (state busy) for event id=\(event.id, privacy: .public) — will retry after current recording ends"
+                )
                 return
             }
-            logger.info("Auto-start confirmed for event id=\(event.id, privacy: .public) outcome=\(String(describing: outcome), privacy: .public)")
+            logger.info(
+                "Auto-start confirmed for event id=\(event.id, privacy: .public) outcome=\(String(describing: outcome), privacy: .public)"
+            )
         case .userDismissed:
             settingsViewModel.skipOccurrence(event)
             Telemetry.send(.calendarAutoStartCancelled(reason: "user_cancel"))
@@ -523,7 +529,7 @@ final class MeetingAutoStartCoordinator {
 
     private func isEventStillEligibleForAutoStart(_ event: CalendarEvent) -> Bool {
         guard settingsViewModel.calendarAutoStartMode == .autoStart,
-              calendarService.permissionStatus == .granted
+            calendarService.permissionStatus == .granted
         else {
             return false
         }
@@ -534,7 +540,7 @@ final class MeetingAutoStartCoordinator {
 
     private func isEventStillEligibleForReminder(_ event: CalendarEvent) -> Bool {
         guard settingsViewModel.calendarAutoStartMode != .off,
-              calendarService.permissionStatus == .granted
+            calendarService.permissionStatus == .granted
         else {
             return false
         }
@@ -545,7 +551,7 @@ final class MeetingAutoStartCoordinator {
 
     func probableSnapshotForManualStart(now: Date = Date()) -> MeetingCalendarSnapshot? {
         guard settingsViewModel.calendarAutoStartMode != .off,
-              calendarService.permissionStatus == .granted
+            calendarService.permissionStatus == .granted
         else {
             return nil
         }
@@ -560,12 +566,12 @@ final class MeetingAutoStartCoordinator {
                 && event.endTime >= now
                 && event.userStatus != .pending
         }
-            .sorted { lhs, rhs in
-                if lhs.isMeeting != rhs.isMeeting {
-                    return lhs.isMeeting && !rhs.isMeeting
-                }
-                return lhs.startTime > rhs.startTime
+        .sorted { lhs, rhs in
+            if lhs.isMeeting != rhs.isMeeting {
+                return lhs.isMeeting && !rhs.isMeeting
             }
+            return lhs.startTime > rhs.startTime
+        }
         guard let event = overlapping.first else { return nil }
         return MeetingCalendarSnapshot(
             event: event,
@@ -640,7 +646,9 @@ private extension MeetingAutoStartCoordinator {
         // this check macOS silently drops `add()` and the user sees no
         // reminder despite Calendar being granted.
         guard await isNotificationAuthorized() else {
-            logger.warning("Notification authorization missing — reminder for event id=\(event.id, privacy: .public) not delivered")
+            logger.warning(
+                "Notification authorization missing — reminder for event id=\(event.id, privacy: .public) not delivered"
+            )
             return
         }
         guard isEventStillEligibleForReminder(event) else { return }
@@ -658,7 +666,7 @@ private extension MeetingAutoStartCoordinator {
             }
             return "\(event.title) is starting"
         }()
-        let notificationBody = event.meetUrl.flatMap(MeetingLinkParser.shared.identifyService) ?? "MacParakeet"
+        let notificationBody = event.meetUrl.flatMap(MeetingLinkParser.shared.identifyService) ?? "Jot"
 
         let content = UNMutableNotificationContent()
         content.title = notificationTitle
@@ -683,11 +691,12 @@ private extension MeetingAutoStartCoordinator {
             } else {
                 try await UNUserNotificationCenter.current().add(request)
             }
-            Telemetry.send(.calendarReminderShown(
-                mode: mode.rawValue,
-                leadMinutes: leadMinutes,
-                hasMeetUrl: event.meetUrl != nil
-            ))
+            Telemetry.send(
+                .calendarReminderShown(
+                    mode: mode.rawValue,
+                    leadMinutes: leadMinutes,
+                    hasMeetUrl: event.meetUrl != nil
+                ))
             logger.info("Reminder posted for event id=\(event.id, privacy: .public)")
         } catch {
             logger.error("Reminder notification failed: \(error.localizedDescription, privacy: .public)")

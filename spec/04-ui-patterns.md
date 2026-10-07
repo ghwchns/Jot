@@ -25,16 +25,13 @@ Design philosophy: **Simple, native, stays out of the way.** No chrome, no clutt
 
 ## Brand And Asset Sources
 
-- In-app brand surfaces use the canonical parakeet PNG through
-  `BreathWaveIcon.brandMark` and `BreathWaveLogo`; see
-  `docs/brand-identity.md` for sizing, tinting, and usage rules.
-- App chrome uses `DesignSystem.Colors.accent`, the warm coral-orange brand
-  accent (`#E86B3B` in the light palette). System colors carry the rest of the
-  UI.
-- Promotional and editorial design uses `brand-assets/`: the recolorable
-  `parakeet-line.svg`, Pop palette, composition templates, and generated PNG
-  exports. The Pop palette is for campaigns, posters, social assets, and launch
-  moments; it must not leak into app chrome.
+- Jot uses the approved grayscale note/speech bitmap through
+  `BreathWaveIcon.brandMark` and `BreathWaveLogo`.
+- App windows and recording pills use neutral gray design tokens in both
+  light and dark appearances. Labels and icons retain state meaning.
+- See `docs/brand-identity.md` for the canonical assets. About retains
+  upstream attribution and licenses; promotional sidebar/footer content is
+  not part of the personal app.
 
 ---
 
@@ -490,7 +487,7 @@ Persistent floating pill centered on the bottom (default) or top edge of the scr
 
 - **Collapsed:** 48×10pt dark grey capsule (subtle nub)
 - **Expanded (hover):** 148×30pt dark capsule with dots + tooltip on the screen-facing side (above at the bottom edge, below at the top)
-- **Position:** Settings → Dictation → Pill position: Bottom (default) or Top, horizontally centered, 12pt inside `visibleFrame` so the Dock and menu bar stay clear. Top also reserves menu-bar/notch height when the menu bar auto-hides or an app is full screen. Idle pill and live overlay share this placement and move immediately when it or the screen layout changes.
+- **Position:** Drag the idle pill or the center of the recording pill to move it. Idle and recording share one saved screen-relative anchor across recordings and app launches. The meeting pill owns a separate saved anchor and can also be dragged. Restoration keeps each panel in the usable screen region, including when its display disappears or changes resolution. Settings → Dictation → Pill position retains Top/Bottom edge defaults; selecting an edge resets the dictation position. “Reset pill positions” restores both pills to their defaults. No hold, timer, or keyboard behavior is added.
 - **Panel:** NSPanel, `.nonactivatingPanel`, `.borderless`, `.floating` level
 
 ### States
@@ -556,7 +553,7 @@ Compact dark pill overlay, always-on-top on the same screen edge as the idle pil
 - **Height:** 36px
 - **Corner radius:** 18px (fully rounded)
 - **Width:** Dynamic, fits content. Persistent dictation recording and cancelled/Undo use 7pt horizontal padding, matching the 7pt vertical inset, so cancel/stop and the countdown/Undo controls sit in the capsule hemispheres. Hold-to-talk recording keeps 16pt — it has no end circles and the compact dot+timer+waveform cluster already looked right at the wider inset. Command recording and processing-with-copy keep 16pt.
-- **Position:** Same edge as the idle pill, horizontally centered, 12pt inside the visible frame. When top-anchored, the stack mirrors: pill on the edge, then live preview, load caption, and hover tooltip below it.
+- **Position:** Uses the saved anchor shared with the idle pill. Drag the recording waveform/timer area; cancel and stop buttons retain their actions. Top/Bottom controls the stack direction so live preview and tooltips extend toward the screen interior.
 - **Background:** `#1C1C1E` (system dark) at 95% opacity
 - **Shadow:** 0 4px 12px rgba(0,0,0,0.3)
 

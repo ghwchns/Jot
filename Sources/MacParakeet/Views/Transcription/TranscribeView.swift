@@ -18,14 +18,6 @@ struct TranscribeView: View {
     @State private var showCancelConfirmation = false
     @State private var aiFormatterWarningMessage: String?
 
-    /// Fixed footer attribution. Previously rotated through 19 randomly-picked
-    /// quotes per view init; pinned to a single quote until the rotation
-    /// system has a clear product role.
-    ///
-    /// Typed as `LocalizedStringKey` so `Text(_:)` uses the localization-aware
-    /// initializer rather than the raw `String` overload.
-    private static let inspirationQuote: LocalizedStringKey = "Be the change you wish to see in the world."
-
     private enum PipelineStep: CaseIterable {
         case download
         case convert
@@ -163,10 +155,6 @@ struct TranscribeView: View {
                             .padding(.horizontal, DesignSystem.Spacing.xl)
                     }
 
-                    Text(Self.inspirationQuote)
-                        .font(DesignSystem.Typography.caption)
-                        .foregroundStyle(.tertiary)
-                        .multilineTextAlignment(.center)
                 }
 
                 Spacer()
@@ -252,7 +240,8 @@ struct TranscribeView: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: DesignSystem.Layout.rowCornerRadius)
                             .strokeBorder(
-                                viewModel.isValidURL ? DesignSystem.Colors.successGreen.opacity(0.35) : DesignSystem.Colors.border,
+                                viewModel.isValidURL
+                                    ? DesignSystem.Colors.successGreen.opacity(0.35) : DesignSystem.Colors.border,
                                 lineWidth: 0.8
                             )
                     )
@@ -269,7 +258,9 @@ struct TranscribeView: View {
                             .padding(.vertical, 9)
                             .background(
                                 RoundedRectangle(cornerRadius: DesignSystem.Layout.buttonCornerRadius)
-                                    .fill(viewModel.isValidURL ? DesignSystem.Colors.accent : DesignSystem.Colors.accent.opacity(0.35))
+                                    .fill(
+                                        viewModel.isValidURL
+                                            ? DesignSystem.Colors.accent : DesignSystem.Colors.accent.opacity(0.35))
                             )
                     }
                     .buttonStyle(.plain)
@@ -408,12 +399,19 @@ struct TranscribeView: View {
                             .foregroundStyle(DesignSystem.Colors.accent.opacity(0.25))
                             .contentTransition(.symbolEffect(.replace))
 
-                        SpinnerRingView(size: 46, revolutionDuration: isDownloadPhase ? 3.2 : 2.0, tintColor: DesignSystem.Colors.accent)
+                        SpinnerRingView(
+                            size: 46, revolutionDuration: isDownloadPhase ? 3.2 : 2.0,
+                            tintColor: DesignSystem.Colors.accent)
                     }
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(viewModel.isDiscoveringFiles ? "Finding recordings" : (viewModel.isBatchActive ? "Batch Transcription In Progress" : "Transcription In Progress"))
-                            .font(DesignSystem.Typography.sectionTitle)
+                        Text(
+                            viewModel.isDiscoveringFiles
+                                ? "Finding recordings"
+                                : (viewModel.isBatchActive
+                                    ? "Batch Transcription In Progress" : "Transcription In Progress")
+                        )
+                        .font(DesignSystem.Typography.sectionTitle)
                         if !viewModel.transcribingFileName.isEmpty {
                             Text(viewModel.transcribingFileName)
                                 .font(DesignSystem.Typography.bodySmall)
@@ -469,13 +467,19 @@ struct TranscribeView: View {
                     }
                 }
 
-                Text(viewModel.isBatchActive
-                    ? "Processing one file at a time on this Mac. Completed transcripts appear in your Library as they finish."
-                    : "Processing remains local to this Mac. You can keep working while this runs.")
-                    .font(DesignSystem.Typography.caption)
-                    .foregroundStyle(.tertiary)
+                Text(
+                    viewModel.isBatchActive
+                        ? "Processing one file at a time on this Mac. Completed transcripts appear in your Library as they finish."
+                        : "Processing remains local to this Mac. You can keep working while this runs."
+                )
+                .font(DesignSystem.Typography.caption)
+                .foregroundStyle(.tertiary)
 
-                Button(viewModel.isDiscoveringFiles ? "Cancel" : (viewModel.isBatchActive ? "Cancel All" : "Cancel Transcription"), role: .destructive) {
+                Button(
+                    viewModel.isDiscoveringFiles
+                        ? "Cancel" : (viewModel.isBatchActive ? "Cancel All" : "Cancel Transcription"),
+                    role: .destructive
+                ) {
                     if viewModel.isDiscoveringFiles {
                         viewModel.cancelTranscription()
                     } else {
@@ -497,9 +501,10 @@ struct TranscribeView: View {
                     }
                     Button("Continue", role: .cancel) {}
                 } message: {
-                    Text(viewModel.isBatchActive
-                        ? "This stops the remaining files in the batch. Files already transcribed are kept in your Library."
-                        : "This will stop the current transcription. Any progress will be lost.")
+                    Text(
+                        viewModel.isBatchActive
+                            ? "This stops the remaining files in the batch. Files already transcribed are kept in your Library."
+                            : "This will stop the current transcription. Any progress will be lost.")
                 }
             }
             .padding(DesignSystem.Spacing.lg)
@@ -605,7 +610,8 @@ struct TranscribeView: View {
             return .pending
         }
         guard let stepIndex = pipelineSteps.firstIndex(of: step),
-              let activeIndex = pipelineSteps.firstIndex(of: activePipelineStep) else {
+            let activeIndex = pipelineSteps.firstIndex(of: activePipelineStep)
+        else {
             return .pending
         }
         if stepIndex < activeIndex { return .complete }

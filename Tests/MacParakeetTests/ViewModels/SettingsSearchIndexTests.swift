@@ -81,7 +81,9 @@ final class SettingsSearchIndexTests: XCTestCase {
     }
 
     func testPillPositionQueriesFindDictationPlacementSetting() {
-        for query in ["pill position", "overlay position", "top of screen", "move pill"] {
+        for query in [
+            "pill position", "overlay position", "top of screen", "move pill", "drag pill", "reset pill positions",
+        ] {
             let ids = Set(SettingsSearchIndex.matches(query).map(\.id))
             XCTAssertTrue(ids.contains("dictation.overlay.position"), "Query \(query) should find pill position")
         }
@@ -115,15 +117,6 @@ final class SettingsSearchIndexTests: XCTestCase {
         )
     }
 
-    func testDiscoverQueryFindsShowDiscoverSetting() {
-        let results = SettingsSearchIndex.matches("discover")
-
-        XCTAssertTrue(
-            results.contains(where: { $0.id == "system.appearance.discover" }),
-            "Discover should land on the Show Discover appearance row"
-        )
-    }
-
     func testTitleMatches() {
         let results = SettingsSearchIndex.matches("Speech Engine")
         XCTAssertTrue(results.contains(where: { $0.id == "engine.selector" }))
@@ -137,7 +130,7 @@ final class SettingsSearchIndexTests: XCTestCase {
 
         for query in [
             "recordings", "files engine", "accuracy", "slower",
-            "separate engine", "final transcript", "same as live", "advanced"
+            "separate engine", "final transcript", "same as live", "advanced",
         ] {
             let results = SettingsSearchIndex.matches(query)
             XCTAssertTrue(
@@ -173,7 +166,7 @@ final class SettingsSearchIndexTests: XCTestCase {
             for query in [
                 "meeting hotkey", "meeting shortcut", "change hotkey",
                 "remove shortcut", "disable hotkey", "CMD+Shift+M",
-                "Command Shift M", "⌘⇧M"
+                "Command Shift M", "⌘⇧M",
             ] {
                 let ids = Set(SettingsSearchIndex.matches(query).map(\.id))
                 XCTAssertTrue(ids.contains("meeting.hotkey"), "Query \(query) should find the meeting hotkey")
@@ -207,7 +200,8 @@ final class SettingsSearchIndexTests: XCTestCase {
                 XCTAssertTrue(ids.contains("meeting.calendar"), "Query \(query) should find the calendar row")
             } else {
                 XCTAssertFalse(ids.contains("meeting"), "Query \(query) should not reveal the hidden meeting card")
-                XCTAssertFalse(ids.contains("meeting.calendar"), "Query \(query) should not reveal the hidden calendar row")
+                XCTAssertFalse(
+                    ids.contains("meeting.calendar"), "Query \(query) should not reveal the hidden calendar row")
             }
         }
     }
@@ -215,7 +209,7 @@ final class SettingsSearchIndexTests: XCTestCase {
     func testMeetingPillQueriesFindFloatingControlsSetting() {
         let queries = [
             "floating", "pill", "meeting controls", "floating controls",
-            "meeting pill", "hide meeting", "recording ui"
+            "meeting pill", "hide meeting", "recording ui",
         ]
 
         for query in queries {
@@ -223,7 +217,9 @@ final class SettingsSearchIndexTests: XCTestCase {
             if AppFeatures.meetingRecordingEnabled {
                 XCTAssertTrue(ids.contains("meeting.floatingControls"), "Query \(query) should find floating controls")
             } else {
-                XCTAssertFalse(ids.contains("meeting.floatingControls"), "Query \(query) should not reveal hidden meeting settings")
+                XCTAssertFalse(
+                    ids.contains("meeting.floatingControls"), "Query \(query) should not reveal hidden meeting settings"
+                )
             }
         }
     }
@@ -235,7 +231,8 @@ final class SettingsSearchIndexTests: XCTestCase {
             if AppFeatures.meetingRecordingEnabled {
                 XCTAssertTrue(ids.contains("meeting.openAppAfterEnd"), "Query \(query) should find open-app toggle")
             } else {
-                XCTAssertFalse(ids.contains("meeting.openAppAfterEnd"), "Query \(query) should not reveal hidden meeting settings")
+                XCTAssertFalse(
+                    ids.contains("meeting.openAppAfterEnd"), "Query \(query) should not reveal hidden meeting settings")
             }
         }
 
@@ -245,7 +242,8 @@ final class SettingsSearchIndexTests: XCTestCase {
             if AppFeatures.meetingRecordingEnabled {
                 XCTAssertTrue(ids.contains("meeting.notifyOnEnd"), "Query \(query) should find notify toggle")
             } else {
-                XCTAssertFalse(ids.contains("meeting.notifyOnEnd"), "Query \(query) should not reveal hidden meeting settings")
+                XCTAssertFalse(
+                    ids.contains("meeting.notifyOnEnd"), "Query \(query) should not reveal hidden meeting settings")
             }
         }
     }
@@ -296,9 +294,12 @@ final class SettingsSearchIndexTests: XCTestCase {
         for query in queries {
             let ids = Set(SettingsSearchIndex.matches(query).map(\.id))
             if AppFeatures.meetingRecordingEnabled {
-                XCTAssertTrue(ids.contains("meeting.speakerDetection"), "Query \(query) should find meeting speaker detection")
+                XCTAssertTrue(
+                    ids.contains("meeting.speakerDetection"), "Query \(query) should find meeting speaker detection")
             } else {
-                XCTAssertFalse(ids.contains("meeting.speakerDetection"), "Query \(query) should not reveal hidden meeting settings")
+                XCTAssertFalse(
+                    ids.contains("meeting.speakerDetection"), "Query \(query) should not reveal hidden meeting settings"
+                )
             }
         }
     }
@@ -358,7 +359,10 @@ final class SettingsSearchIndexTests: XCTestCase {
         let entry = try XCTUnwrap(SettingsSearchIndex.entries.first { $0.id == "ai.meetingLanguage" })
         XCTAssertEqual(entry.cardAnchor, "ai.meetingLanguage")
 
-        for query in ["ai result language", "meeting ai language", "follow transcript", "summary language", "output language", "korean"] {
+        for query in [
+            "ai result language", "meeting ai language", "follow transcript", "summary language", "output language",
+            "korean",
+        ] {
             let ids = Set(SettingsSearchIndex.matches(query).map(\.id))
             XCTAssertTrue(ids.contains("ai.meetingLanguage"), "Query \(query) should find Language of AI Results")
         }
@@ -388,7 +392,8 @@ final class SettingsSearchIndexTests: XCTestCase {
             if AppFeatures.aiFormatterProfilesEnabled {
                 XCTAssertTrue(ids.contains("ai.formatter"), "Query \(query) should find AI Formatter")
             } else {
-                XCTAssertFalse(ids.contains("ai.formatter"), "Query \(query) should not reveal hidden AI Formatter profiles")
+                XCTAssertFalse(
+                    ids.contains("ai.formatter"), "Query \(query) should not reveal hidden AI Formatter profiles")
             }
         }
     }
@@ -426,7 +431,7 @@ final class SettingsSearchIndexTests: XCTestCase {
             "meeting.startMuted",
             "meeting.autoStop",
             "meeting.calendar",
-            "system.permissions.screen"
+            "system.permissions.screen",
         ]
         let calendarGatedIds: Set<String> = ["meeting.calendar"]
         let autoStopGatedIds: Set<String> = ["meeting.autoStop"]
@@ -436,10 +441,12 @@ final class SettingsSearchIndexTests: XCTestCase {
         if AppFeatures.meetingRecordingEnabled {
             // Calendar entry drops out independently when calendarEnabled
             // is off, and auto-stop drops out independently while staged.
-            let expected = AppFeatures.calendarEnabled
+            let expected =
+                AppFeatures.calendarEnabled
                 ? meetingGatedIds
                 : meetingGatedIds.subtracting(calendarGatedIds)
-            let expectedWithAutoStop = AppFeatures.meetingAutoStopEnabled
+            let expectedWithAutoStop =
+                AppFeatures.meetingAutoStopEnabled
                 ? expected
                 : expected.subtracting(autoStopGatedIds)
             XCTAssertEqual(

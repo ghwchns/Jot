@@ -61,7 +61,6 @@ final class AppWindowCoordinator: NSObject, NSWindowDelegate {
     private let textSnippetsViewModel: TextSnippetsViewModel
     private let vocabularyBackupViewModel: VocabularyBackupViewModel
     private let feedbackViewModel: FeedbackViewModel
-    private let discoverViewModel: DiscoverViewModel
     private let libraryViewModel: TranscriptionLibraryViewModel
     private let askWorkspaceViewModel: AskWorkspaceViewModel
     private let meetingsWorkspaceViewModel: MeetingsWorkspaceViewModel
@@ -96,7 +95,6 @@ final class AppWindowCoordinator: NSObject, NSWindowDelegate {
         textSnippetsViewModel: TextSnippetsViewModel,
         vocabularyBackupViewModel: VocabularyBackupViewModel,
         feedbackViewModel: FeedbackViewModel,
-        discoverViewModel: DiscoverViewModel,
         libraryViewModel: TranscriptionLibraryViewModel,
         askWorkspaceViewModel: AskWorkspaceViewModel,
         meetingsWorkspaceViewModel: MeetingsWorkspaceViewModel,
@@ -127,7 +125,6 @@ final class AppWindowCoordinator: NSObject, NSWindowDelegate {
         self.textSnippetsViewModel = textSnippetsViewModel
         self.vocabularyBackupViewModel = vocabularyBackupViewModel
         self.feedbackViewModel = feedbackViewModel
-        self.discoverViewModel = discoverViewModel
         self.libraryViewModel = libraryViewModel
         self.askWorkspaceViewModel = askWorkspaceViewModel
         self.meetingsWorkspaceViewModel = meetingsWorkspaceViewModel
@@ -172,10 +169,11 @@ final class AppWindowCoordinator: NSObject, NSWindowDelegate {
     }
 
     func applyActivationPolicyFromSettings() {
-        NSApp.setActivationPolicy(Self.activationPolicy(
-            menuBarOnlyMode: settingsViewModel.menuBarOnlyMode,
-            hasVisiblePrimaryWindow: hasVisiblePrimaryWindow
-        ))
+        NSApp.setActivationPolicy(
+            Self.activationPolicy(
+                menuBarOnlyMode: settingsViewModel.menuBarOnlyMode,
+                hasVisiblePrimaryWindow: hasVisiblePrimaryWindow
+            ))
     }
 
     static func activationPolicy(
@@ -189,7 +187,7 @@ final class AppWindowCoordinator: NSObject, NSWindowDelegate {
         let menu = NSMenu()
 
         let openItem = NSMenuItem(
-            title: "Open MacParakeet",
+            title: "Open Jot",
             action: #selector(dockOpenMainWindow),
             keyEquivalent: ""
         )
@@ -207,7 +205,7 @@ final class AppWindowCoordinator: NSObject, NSWindowDelegate {
         menu.addItem(NSMenuItem.separator())
 
         let quitItem = NSMenuItem(
-            title: "Quit MacParakeet",
+            title: "Quit Jot",
             action: #selector(dockQuit),
             keyEquivalent: ""
         )
@@ -245,7 +243,6 @@ final class AppWindowCoordinator: NSObject, NSWindowDelegate {
             textSnippetsViewModel: textSnippetsViewModel,
             vocabularyBackupViewModel: vocabularyBackupViewModel,
             feedbackViewModel: feedbackViewModel,
-            discoverViewModel: discoverViewModel,
             libraryViewModel: libraryViewModel,
             askWorkspaceViewModel: askWorkspaceViewModel,
             meetingsWorkspaceViewModel: meetingsWorkspaceViewModel,
@@ -272,7 +269,7 @@ final class AppWindowCoordinator: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "MacParakeet"
+        window.title = "Jot"
         window.center()
         window.setFrameAutosaveName("MainWindow")
         window.minSize = NSSize(

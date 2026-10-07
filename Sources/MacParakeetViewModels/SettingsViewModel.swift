@@ -127,6 +127,7 @@ public final class SettingsViewModel {
     public var dictationOverlayPlacement: DictationOverlayPlacement {
         didSet {
             guard dictationOverlayPlacement != oldValue else { return }
+            FloatingPillPosition.reset(for: .dictation, defaults: defaults)
             defaults.set(
                 dictationOverlayPlacement.rawValue,
                 forKey: UserDefaultsAppRuntimePreferences.dictationOverlayPlacementKey
@@ -171,10 +172,11 @@ public final class SettingsViewModel {
                 notifyOnTranscriptionComplete,
                 forKey: UserDefaultsAppRuntimePreferences.notifyOnTranscriptionCompleteKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .transcriptionCompletionNotification,
-                value: Self.settingValue(notifyOnTranscriptionComplete)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .transcriptionCompletionNotification,
+                    value: Self.settingValue(notifyOnTranscriptionComplete)
+                ))
         }
     }
 
@@ -218,7 +220,8 @@ public final class SettingsViewModel {
     }
     public var youtubeTranscriptionHotkeyTrigger: HotkeyTrigger {
         didSet {
-            youtubeTranscriptionHotkeyTrigger.save(to: defaults, defaultsKey: HotkeyTrigger.youtubeTranscriptionDefaultsKey)
+            youtubeTranscriptionHotkeyTrigger.save(
+                to: defaults, defaultsKey: HotkeyTrigger.youtubeTranscriptionDefaultsKey)
             NotificationCenter.default.post(
                 name: .macParakeetYouTubeTranscriptionHotkeyTriggerDidChange,
                 object: nil
@@ -251,10 +254,11 @@ public final class SettingsViewModel {
                 keepDictationOnClipboard,
                 forKey: UserDefaultsAppRuntimePreferences.keepDictationOnClipboardKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .keepDictationOnClipboard,
-                value: Self.settingValue(keepDictationOnClipboard)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .keepDictationOnClipboard,
+                    value: Self.settingValue(keepDictationOnClipboard)
+                ))
         }
     }
     public var dictationStreamingCursorEnabled: Bool {
@@ -263,10 +267,11 @@ public final class SettingsViewModel {
                 dictationStreamingCursorEnabled,
                 forKey: UserDefaultsAppRuntimePreferences.dictationStreamingCursorEnabledKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .streamingCursor,
-                value: Self.settingValue(dictationStreamingCursorEnabled)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .streamingCursor,
+                    value: Self.settingValue(dictationStreamingCursorEnabled)
+                ))
         }
     }
     public var selectedMicrophoneDeviceUID: String {
@@ -304,10 +309,11 @@ public final class SettingsViewModel {
                 startMeetingsMuted,
                 forKey: UserDefaultsAppRuntimePreferences.startMeetingsMutedKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .startMeetingsMuted,
-                value: Self.settingValue(startMeetingsMuted)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .startMeetingsMuted,
+                    value: Self.settingValue(startMeetingsMuted)
+                ))
         }
     }
     public var showMeetingRecordingPill: Bool {
@@ -317,10 +323,11 @@ public final class SettingsViewModel {
                 forKey: UserDefaultsAppRuntimePreferences.showMeetingRecordingPillKey
             )
             NotificationCenter.default.post(name: .macParakeetShowMeetingRecordingPillDidChange, object: nil)
-            Telemetry.send(.settingChanged(
-                setting: .meetingRecordingPill,
-                value: Self.settingValue(showMeetingRecordingPill)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .meetingRecordingPill,
+                    value: Self.settingValue(showMeetingRecordingPill)
+                ))
         }
     }
     public var openAppAfterMeetingEnd: Bool {
@@ -329,10 +336,11 @@ public final class SettingsViewModel {
                 openAppAfterMeetingEnd,
                 forKey: UserDefaultsAppRuntimePreferences.openAppAfterMeetingEndKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .openAppAfterMeetingEnd,
-                value: Self.settingValue(openAppAfterMeetingEnd)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .openAppAfterMeetingEnd,
+                    value: Self.settingValue(openAppAfterMeetingEnd)
+                ))
         }
     }
     public var notifyOnMeetingEnd: Bool {
@@ -341,10 +349,11 @@ public final class SettingsViewModel {
                 notifyOnMeetingEnd,
                 forKey: UserDefaultsAppRuntimePreferences.notifyOnMeetingEndKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .notifyOnMeetingEnd,
-                value: Self.settingValue(notifyOnMeetingEnd)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .notifyOnMeetingEnd,
+                    value: Self.settingValue(notifyOnMeetingEnd)
+                ))
         }
     }
     public var meetingAutoStopEnabled: Bool {
@@ -363,10 +372,11 @@ public final class SettingsViewModel {
                 pauseMediaDuringDictation,
                 forKey: UserDefaultsAppRuntimePreferences.pauseMediaDuringDictationKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .pauseMediaDuringDictation,
-                value: Self.settingValue(pauseMediaDuringDictation)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .pauseMediaDuringDictation,
+                    value: Self.settingValue(pauseMediaDuringDictation)
+                ))
         }
     }
     public var playDictationCaptureSounds: Bool {
@@ -375,10 +385,11 @@ public final class SettingsViewModel {
                 playDictationCaptureSounds,
                 forKey: UserDefaultsAppRuntimePreferences.playDictationCaptureSoundsKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .playDictationCaptureSounds,
-                value: Self.settingValue(playDictationCaptureSounds)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .playDictationCaptureSounds,
+                    value: Self.settingValue(playDictationCaptureSounds)
+                ))
         }
     }
 
@@ -388,10 +399,11 @@ public final class SettingsViewModel {
                 escapeCancelsDictation,
                 forKey: UserDefaultsAppRuntimePreferences.escapeCancelsDictationKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .escapeCancelsDictation,
-                value: Self.settingValue(escapeCancelsDictation)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .escapeCancelsDictation,
+                    value: Self.settingValue(escapeCancelsDictation)
+                ))
         }
     }
     public var preserveDiscardedDictations: Bool {
@@ -400,10 +412,11 @@ public final class SettingsViewModel {
                 preserveDiscardedDictations,
                 forKey: UserDefaultsAppRuntimePreferences.preserveDiscardedDictationsKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .preserveDiscardedDictations,
-                value: Self.settingValue(preserveDiscardedDictations)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .preserveDiscardedDictations,
+                    value: Self.settingValue(preserveDiscardedDictations)
+                ))
         }
     }
     public var instantDictationEnabled: Bool {
@@ -413,7 +426,8 @@ public final class SettingsViewModel {
                 forKey: UserDefaultsAppRuntimePreferences.instantDictationEnabledKey
             )
             NotificationCenter.default.post(name: .macParakeetInstantDictationDidChange, object: nil)
-            Telemetry.send(.settingChanged(setting: .instantDictation, value: Self.settingValue(instantDictationEnabled)))
+            Telemetry.send(
+                .settingChanged(setting: .instantDictation, value: Self.settingValue(instantDictationEnabled)))
         }
     }
     public var showLiveDictationPreview: Bool {
@@ -422,10 +436,11 @@ public final class SettingsViewModel {
                 showLiveDictationPreview,
                 forKey: UserDefaultsAppRuntimePreferences.showLiveDictationPreviewKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .liveDictationPreview,
-                value: Self.settingValue(showLiveDictationPreview)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .liveDictationPreview,
+                    value: Self.settingValue(showLiveDictationPreview)
+                ))
         }
     }
 
@@ -460,9 +475,11 @@ public final class SettingsViewModel {
         if selectedMicrophoneDeviceUID == Self.systemDefaultMicrophoneSelection {
             if meetingAudioSourceMode == .systemOnly {
                 if let currentDefault = microphoneDeviceOptions.first(where: \.isDefault) {
-                    return "Using macOS System Default for dictation: \(currentDefault.name). Meeting recording is set to \(MeetingAudioSourceMode.systemOnly.displayTitle)."
+                    return
+                        "Using macOS System Default for dictation: \(currentDefault.name). Meeting recording is set to \(MeetingAudioSourceMode.systemOnly.displayTitle)."
                 }
-                return "Using macOS System Default for dictation. Meeting recording is set to \(MeetingAudioSourceMode.systemOnly.displayTitle)."
+                return
+                    "Using macOS System Default for dictation. Meeting recording is set to \(MeetingAudioSourceMode.systemOnly.displayTitle)."
             }
             if let currentDefault = microphoneDeviceOptions.first(where: \.isDefault) {
                 return "Using macOS System Default: \(currentDefault.name)."
@@ -470,13 +487,14 @@ public final class SettingsViewModel {
             return "Using macOS System Default."
         }
         guard let selected = microphoneDeviceOptions.first(where: { $0.uid == selectedMicrophoneDeviceUID }) else {
-            return "Selected microphone is unavailable. MacParakeet will use System Default until it returns."
+            return "Selected microphone is unavailable. Jot will use System Default until it returns."
         }
         guard selected.isAvailable else {
-            return "Selected microphone is unavailable. MacParakeet will use System Default until it returns."
+            return "Selected microphone is unavailable. Jot will use System Default until it returns."
         }
         if meetingAudioSourceMode == .systemOnly {
-            return "Using \(selected.name) for dictation. Meeting recording is set to \(MeetingAudioSourceMode.systemOnly.displayTitle)."
+            return
+                "Using \(selected.name) for dictation. Meeting recording is set to \(MeetingAudioSourceMode.systemOnly.displayTitle)."
         }
         return "Using \(selected.name) for dictation and meeting microphone capture."
     }
@@ -563,10 +581,11 @@ public final class SettingsViewModel {
                 spokenPunctuationEnabled,
                 forKey: UserDefaultsAppRuntimePreferences.spokenPunctuationEnabledKey
             )
-            Telemetry.send(.settingChanged(
-                setting: .spokenPunctuation,
-                value: Self.settingValue(spokenPunctuationEnabled)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .spokenPunctuation,
+                    value: Self.settingValue(spokenPunctuationEnabled)
+                ))
         }
     }
     public var dictationInsertionStyle: DictationInsertionStyle {
@@ -587,12 +606,14 @@ public final class SettingsViewModel {
     public var customWordCount: Int = 0
     public var snippetCount: Int = 0
     public var customVocabularyRecognitionStatus: CustomVocabularyBoostingSupportPresentation {
-        guard let capabilities = SpeechEngineCapabilityRegistry.capabilities(
-            for: engine.speechEnginePreference,
-            parakeetModelVariant: engine.parakeetModelVariant,
-            nemotronModelVariant: engine.nemotronModelVariant,
-            whisperModelVariant: engine.whisperModelVariant.rawValue
-        ) else {
+        guard
+            let capabilities = SpeechEngineCapabilityRegistry.capabilities(
+                for: engine.speechEnginePreference,
+                parakeetModelVariant: engine.parakeetModelVariant,
+                nemotronModelVariant: engine.nemotronModelVariant,
+                whisperModelVariant: engine.whisperModelVariant.rawValue
+            )
+        else {
             return CustomVocabularyBoostingPresentation.status(for: Optional<SpeechEngineCapabilities>.none)
         }
         let runtimePreferences = UserDefaultsAppRuntimePreferences(defaults: defaults)
@@ -618,10 +639,11 @@ public final class SettingsViewModel {
     public var saveTranscriptionAudio: Bool {
         didSet {
             defaults.set(saveTranscriptionAudio, forKey: UserDefaultsAppRuntimePreferences.saveTranscriptionAudioKey)
-            Telemetry.send(.settingChanged(
-                setting: .saveTranscriptionAudio,
-                value: Self.settingValue(saveTranscriptionAudio)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .saveTranscriptionAudio,
+                    value: Self.settingValue(saveTranscriptionAudio)
+                ))
         }
     }
     public var meetingAudioRetention: MeetingAudioRetention {
@@ -660,11 +682,13 @@ public final class SettingsViewModel {
     }
     public var meetingSpeakerDiarization: Bool {
         didSet {
-            defaults.set(meetingSpeakerDiarization, forKey: UserDefaultsAppRuntimePreferences.meetingSpeakerDiarizationKey)
-            Telemetry.send(.settingChanged(
-                setting: .meetingSpeakerDiarization,
-                value: Self.settingValue(meetingSpeakerDiarization)
-            ))
+            defaults.set(
+                meetingSpeakerDiarization, forKey: UserDefaultsAppRuntimePreferences.meetingSpeakerDiarizationKey)
+            Telemetry.send(
+                .settingChanged(
+                    setting: .meetingSpeakerDiarization,
+                    value: Self.settingValue(meetingSpeakerDiarization)
+                ))
         }
     }
     public var meetingLiveTranscriptionEnabled: Bool {
@@ -688,10 +712,11 @@ public final class SettingsViewModel {
     public private(set) var rememberSpeakers: Bool {
         didSet {
             defaults.set(rememberSpeakers, forKey: UserDefaultsAppRuntimePreferences.rememberSpeakersKey)
-            Telemetry.send(.settingChanged(
-                setting: .rememberSpeakers,
-                value: Self.settingValue(rememberSpeakers)
-            ))
+            Telemetry.send(
+                .settingChanged(
+                    setting: .rememberSpeakers,
+                    value: Self.settingValue(rememberSpeakers)
+                ))
         }
     }
 
@@ -856,7 +881,8 @@ public final class SettingsViewModel {
     }
     public var calendarExcludedIdentifiers: Set<String> {
         didSet {
-            defaults.set(Array(calendarExcludedIdentifiers), forKey: CalendarAutoStartPreferences.excludedCalendarIdsKey)
+            defaults.set(
+                Array(calendarExcludedIdentifiers), forKey: CalendarAutoStartPreferences.excludedCalendarIdsKey)
             guard !isResolvingCalendarSettings else { return }
             NotificationCenter.default.post(name: .macParakeetCalendarSettingsDidChange, object: nil)
             Telemetry.send(.settingChanged(setting: .calendarIncludedCalendars))
@@ -1052,9 +1078,10 @@ public final class SettingsViewModel {
         dictationOverlayPlacement = DictationOverlayPlacement.current(defaults: defaults)
         showDiscover = defaults.object(forKey: UserDefaultsAppRuntimePreferences.showDiscoverKey) as? Bool ?? true
         telemetryEnabled = AppPreferences.isTelemetryEnabled(defaults: defaults)
-        notifyOnTranscriptionComplete = defaults.object(
-            forKey: UserDefaultsAppRuntimePreferences.notifyOnTranscriptionCompleteKey
-        ) as? Bool ?? true
+        notifyOnTranscriptionComplete =
+            defaults.object(
+                forKey: UserDefaultsAppRuntimePreferences.notifyOnTranscriptionCompleteKey
+            ) as? Bool ?? true
         let resolvedDictationHotkeys = Self.resolveDictationHotkeyTriggers(defaults: defaults)
         hotkeyTrigger = resolvedDictationHotkeys.handsFree
         pushToTalkHotkeyTrigger = resolvedDictationHotkeys.pushToTalk
@@ -1083,9 +1110,10 @@ public final class SettingsViewModel {
         keepDictationOnClipboard = defaults.bool(
             forKey: UserDefaultsAppRuntimePreferences.keepDictationOnClipboardKey
         )
-        dictationStreamingCursorEnabled = defaults.object(
-            forKey: UserDefaultsAppRuntimePreferences.dictationStreamingCursorEnabledKey
-        ) as? Bool ?? false
+        dictationStreamingCursorEnabled =
+            defaults.object(
+                forKey: UserDefaultsAppRuntimePreferences.dictationStreamingCursorEnabledKey
+            ) as? Bool ?? false
         selectedMicrophoneDeviceUID = Self.normalizedMicrophoneSelection(
             defaults.string(forKey: UserDefaultsAppRuntimePreferences.selectedMicrophoneDeviceUIDKey)
         )
@@ -1094,45 +1122,56 @@ public final class SettingsViewModel {
         showMeetingRecordingPill = UserDefaultsAppRuntimePreferences.showMeetingRecordingPill(defaults: defaults)
         openAppAfterMeetingEnd = UserDefaultsAppRuntimePreferences.openAppAfterMeetingEnd(defaults: defaults)
         notifyOnMeetingEnd = UserDefaultsAppRuntimePreferences.notifyOnMeetingEnd(defaults: defaults)
-        meetingAutoStopEnabled = defaults.object(
-            forKey: UserDefaultsAppRuntimePreferences.meetingAutoStopEnabledKey
-        ) as? Bool ?? false
-        pauseMediaDuringDictation = defaults.object(
-            forKey: UserDefaultsAppRuntimePreferences.pauseMediaDuringDictationKey
-        ) as? Bool ?? false
+        meetingAutoStopEnabled =
+            defaults.object(
+                forKey: UserDefaultsAppRuntimePreferences.meetingAutoStopEnabledKey
+            ) as? Bool ?? false
+        pauseMediaDuringDictation =
+            defaults.object(
+                forKey: UserDefaultsAppRuntimePreferences.pauseMediaDuringDictationKey
+            ) as? Bool ?? false
         playDictationCaptureSounds = UserDefaultsAppRuntimePreferences.playDictationCaptureSounds(defaults: defaults)
         escapeCancelsDictation = UserDefaultsAppRuntimePreferences.escapeCancelsDictation(defaults: defaults)
         preserveDiscardedDictations = UserDefaultsAppRuntimePreferences.preserveDiscardedDictations(defaults: defaults)
-        instantDictationEnabled = defaults.object(
-            forKey: UserDefaultsAppRuntimePreferences.instantDictationEnabledKey
-        ) as? Bool ?? false
-        showLiveDictationPreview = defaults.object(
-            forKey: UserDefaultsAppRuntimePreferences.showLiveDictationPreviewKey
-        ) as? Bool ?? true
+        instantDictationEnabled =
+            defaults.object(
+                forKey: UserDefaultsAppRuntimePreferences.instantDictationEnabledKey
+            ) as? Bool ?? false
+        showLiveDictationPreview =
+            defaults.object(
+                forKey: UserDefaultsAppRuntimePreferences.showLiveDictationPreviewKey
+            ) as? Bool ?? true
         dictationPreviewTextSize = DictationPreviewTextSize.current(defaults: defaults)
         dictationUndoCountdown = DictationUndoCountdown.current(defaults: defaults)
         voiceReturnEnabled = defaults.bool(forKey: UserDefaultsAppRuntimePreferences.voiceReturnEnabledKey)
         voiceReturnTriggers = UserDefaultsAppRuntimePreferences.voiceReturnTriggerList(defaults: defaults)
-        processingMode = Self.normalizedProcessingMode(defaults.string(forKey: UserDefaultsAppRuntimePreferences.processingModeKey))
+        processingMode = Self.normalizedProcessingMode(
+            defaults.string(forKey: UserDefaultsAppRuntimePreferences.processingModeKey))
         spokenPunctuationEnabled = UserDefaultsAppRuntimePreferences.spokenPunctuationEnabled(defaults: defaults)
         dictationInsertionStyle = DictationInsertionStyle.current(defaults: defaults)
         removeUmFiller = UserDefaultsAppRuntimePreferences.removeUmFiller(defaults: defaults)
-        saveDictationHistory = defaults.object(forKey: UserDefaultsAppRuntimePreferences.saveDictationHistoryKey) as? Bool ?? true
-        saveAudioRecordings = defaults.object(forKey: UserDefaultsAppRuntimePreferences.saveAudioRecordingsKey) as? Bool ?? true
-        saveTranscriptionAudio = defaults.object(forKey: UserDefaultsAppRuntimePreferences.saveTranscriptionAudioKey) as? Bool ?? true
+        saveDictationHistory =
+            defaults.object(forKey: UserDefaultsAppRuntimePreferences.saveDictationHistoryKey) as? Bool ?? true
+        saveAudioRecordings =
+            defaults.object(forKey: UserDefaultsAppRuntimePreferences.saveAudioRecordingsKey) as? Bool ?? true
+        saveTranscriptionAudio =
+            defaults.object(forKey: UserDefaultsAppRuntimePreferences.saveTranscriptionAudioKey) as? Bool ?? true
         meetingAudioRetention = UserDefaultsAppRuntimePreferences.meetingAudioRetention(defaults: defaults)
         youtubeAudioQuality = YouTubeAudioQuality.current(defaults: defaults)
         speakerDiarization = UserDefaultsAppRuntimePreferences.speakerDiarizationEnabled(defaults: defaults)
-        meetingSpeakerDiarization = UserDefaultsAppRuntimePreferences.meetingSpeakerDiarizationEnabled(defaults: defaults)
+        meetingSpeakerDiarization = UserDefaultsAppRuntimePreferences.meetingSpeakerDiarizationEnabled(
+            defaults: defaults)
         meetingLiveTranscriptionEnabled = UserDefaultsAppRuntimePreferences.meetingLiveTranscriptionEnabled(
             defaults: defaults
         )
         // The stored preference, not the resolved gate: the switch has to show
         // what the user last chose even while the feature flag is off.
-        rememberSpeakers = defaults.object(
-            forKey: UserDefaultsAppRuntimePreferences.rememberSpeakersKey
-        ) as? Bool ?? UserDefaultsAppRuntimePreferences.defaultRememberSpeakersEnabled
-        voiceprintConsentAcknowledgedAt = UserDefaultsAppRuntimePreferences
+        rememberSpeakers =
+            defaults.object(
+                forKey: UserDefaultsAppRuntimePreferences.rememberSpeakersKey
+            ) as? Bool ?? UserDefaultsAppRuntimePreferences.defaultRememberSpeakersEnabled
+        voiceprintConsentAcknowledgedAt =
+            UserDefaultsAppRuntimePreferences
             .voiceprintConsentAcknowledgedAt(defaults: defaults)
         // Ensure auto-save folders are configured before reading paths.
         // Idempotent: existing user-chosen folders are preserved; only
@@ -1146,16 +1185,20 @@ public final class SettingsViewModel {
         autoSaveFormat = AutoSaveFormat(rawValue: defaults.string(forKey: AutoSaveService.formatKey) ?? "md") ?? .md
         autoSaveFolderPath = Self.resolveAutoSaveFolderPath(defaults: defaults, scope: .transcription)
         meetingAutoSave = defaults.bool(forKey: AutoSaveScope.meeting.enabledKey)
-        meetingAutoSaveFormat = AutoSaveFormat(rawValue: defaults.string(forKey: AutoSaveScope.meeting.formatKey) ?? "md") ?? .md
-        meetingAutoSaveIncludeTimestamps = defaults.object(
-            forKey: AutoSaveService.meetingIncludeTimestampsKey
-        ) as? Bool ?? true
-        meetingAutoSaveIncludeSpeakerLabels = defaults.object(
-            forKey: AutoSaveService.meetingIncludeSpeakerLabelsKey
-        ) as? Bool ?? true
-        meetingAutoSaveIncludeMetadata = defaults.object(
-            forKey: AutoSaveService.meetingIncludeMetadataKey
-        ) as? Bool ?? true
+        meetingAutoSaveFormat =
+            AutoSaveFormat(rawValue: defaults.string(forKey: AutoSaveScope.meeting.formatKey) ?? "md") ?? .md
+        meetingAutoSaveIncludeTimestamps =
+            defaults.object(
+                forKey: AutoSaveService.meetingIncludeTimestampsKey
+            ) as? Bool ?? true
+        meetingAutoSaveIncludeSpeakerLabels =
+            defaults.object(
+                forKey: AutoSaveService.meetingIncludeSpeakerLabelsKey
+            ) as? Bool ?? true
+        meetingAutoSaveIncludeMetadata =
+            defaults.object(
+                forKey: AutoSaveService.meetingIncludeMetadataKey
+            ) as? Bool ?? true
         meetingAutoSaveFolderPath = Self.resolveAutoSaveFolderPath(defaults: defaults, scope: .meeting)
         calendarAutoStartMode = Self.resolveCalendarAutoStartMode(defaults: defaults)
         calendarReminderMinutes = Self.resolveCalendarReminderMinutes(defaults: defaults)
@@ -1284,7 +1327,8 @@ public final class SettingsViewModel {
 
     private static func resolveCalendarAutoStartMode(defaults: UserDefaults) -> CalendarAutoStartMode {
         guard let raw = defaults.string(forKey: CalendarAutoStartPreferences.modeKey),
-              let mode = CalendarAutoStartMode(rawValue: raw) else {
+            let mode = CalendarAutoStartMode(rawValue: raw)
+        else {
             return .off  // Off by default — opt-in only via onboarding or Settings.
         }
         return mode
@@ -1299,7 +1343,8 @@ public final class SettingsViewModel {
 
     private static func resolveMeetingTriggerFilter(defaults: UserDefaults) -> MeetingTriggerFilter {
         guard let raw = defaults.string(forKey: CalendarAutoStartPreferences.triggerFilterKey),
-              let filter = MeetingTriggerFilter(rawValue: raw) else {
+            let filter = MeetingTriggerFilter(rawValue: raw)
+        else {
             return .withLink
         }
         return filter
@@ -1317,7 +1362,9 @@ public final class SettingsViewModel {
     }
 
     /// Resolve the stored bookmark to a display path.
-    private static func resolveAutoSaveFolderPath(defaults: UserDefaults, scope: AutoSaveScope = .transcription) -> String? {
+    private static func resolveAutoSaveFolderPath(defaults: UserDefaults, scope: AutoSaveScope = .transcription)
+        -> String?
+    {
         AutoSaveService.resolveFolder(scope: scope, defaults: defaults)?.path
     }
 
@@ -1367,7 +1414,7 @@ public final class SettingsViewModel {
         meetingAutoSaveFolderPath = path
         let isUsable = await AutoSaveService.isFolderUsable(folderURL)
         guard defaults.data(forKey: AutoSaveScope.meeting.folderBookmarkKey) == bookmarkData,
-              meetingAutoSaveFolderPath == path
+            meetingAutoSaveFolderPath == path
         else { return }
         meetingAutoSaveFolderIsUsable = isUsable
     }
@@ -1390,7 +1437,8 @@ public final class SettingsViewModel {
         let hasDedicatedPushToTalkTrigger = defaults.object(forKey: HotkeyTrigger.pushToTalkDefaultsKey) != nil
 
         if !hasHandsFreeTrigger {
-            let pushToTalk = hasDedicatedPushToTalkTrigger
+            let pushToTalk =
+                hasDedicatedPushToTalkTrigger
                 ? HotkeyTrigger.current(
                     defaults: defaults,
                     defaultsKey: HotkeyTrigger.pushToTalkDefaultsKey,
@@ -1428,18 +1476,21 @@ public final class SettingsViewModel {
             fallback: .defaultPushToTalk
         )
         if storedHandsFree == .fnSpace,
-           pushToTalk == .defaultPushToTalk {
+            pushToTalk == .defaultPushToTalk
+        {
             return (.defaultDictation, .defaultPushToTalk, true, false)
         }
         if !storedHandsFree.isDisabled,
-           !pushToTalk.isDisabled,
-           storedHandsFree == pushToTalk {
+            !pushToTalk.isDisabled,
+            storedHandsFree == pushToTalk
+        {
             return (storedHandsFree, pushToTalk, false, false)
         }
         if !storedHandsFree.isDisabled,
-           !pushToTalk.isDisabled,
-           storedHandsFree != pushToTalk,
-           storedHandsFree.overlaps(with: pushToTalk) {
+            !pushToTalk.isDisabled,
+            storedHandsFree != pushToTalk,
+            storedHandsFree.overlaps(with: pushToTalk)
+        {
             return (defaultHandsFreeTrigger(avoiding: pushToTalk), pushToTalk, true, false)
         }
         return (storedHandsFree, pushToTalk, false, false)
@@ -1450,7 +1501,8 @@ public final class SettingsViewModel {
             return .defaultDictation
         }
         guard !pushToTalk.isDisabled,
-              HotkeyTrigger.defaultDictation.overlaps(with: pushToTalk) else {
+            HotkeyTrigger.defaultDictation.overlaps(with: pushToTalk)
+        else {
             return .defaultDictation
         }
         return .disabled
@@ -1610,7 +1662,8 @@ public final class SettingsViewModel {
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
         if selectedMicrophoneDeviceUID != Self.systemDefaultMicrophoneSelection,
-           !microphoneDeviceOptions.contains(where: { $0.uid == selectedMicrophoneDeviceUID }) {
+            !microphoneDeviceOptions.contains(where: { $0.uid == selectedMicrophoneDeviceUID })
+        {
             microphoneDeviceOptions.append(
                 MicrophoneDeviceOption(
                     id: selectedMicrophoneDeviceUID,
@@ -1650,7 +1703,8 @@ public final class SettingsViewModel {
                 }
                 await capture.stop()
                 guard !Task.isCancelled else { return }
-                microphoneTestState = levelBox.maxLevel > Self.microphoneTestSilenceThreshold
+                microphoneTestState =
+                    levelBox.maxLevel > Self.microphoneTestSilenceThreshold
                     ? .succeeded
                     : .failed("No input detected. Check the selected microphone and try again.")
             } catch {
@@ -1851,12 +1905,15 @@ public final class SettingsViewModel {
 
     public func refreshStats() {
         guard let repo = dictationRepo else { return }
-        do { dictationCount = try repo.stats().visibleCount }
-        catch { logger.error("Failed to load dictation stats: \(error.localizedDescription)") }
-        do { customWordCount = try customWordRepo?.fetchAll().count ?? 0 }
-        catch { logger.error("Failed to load custom word count: \(error.localizedDescription)") }
-        do { snippetCount = try snippetRepo?.fetchAll().count ?? 0 }
-        catch { logger.error("Failed to load snippet count: \(error.localizedDescription)") }
+        do { dictationCount = try repo.stats().visibleCount } catch {
+            logger.error("Failed to load dictation stats: \(error.localizedDescription)")
+        }
+        do { customWordCount = try customWordRepo?.fetchAll().count ?? 0 } catch {
+            logger.error("Failed to load custom word count: \(error.localizedDescription)")
+        }
+        do { snippetCount = try snippetRepo?.fetchAll().count ?? 0 } catch {
+            logger.error("Failed to load snippet count: \(error.localizedDescription)")
+        }
 
         refreshStorageStats()
     }
@@ -1890,7 +1947,10 @@ public final class SettingsViewModel {
                 await MainActor.run {
                     self.licensingBusy = false
                     self.licensingError = error.localizedDescription
-                    Telemetry.send(.licenseActivationFailed(errorType: TelemetryErrorClassifier.classify(error), errorDetail: TelemetryErrorClassifier.errorDetail(error)))
+                    Telemetry.send(
+                        .licenseActivationFailed(
+                            errorType: TelemetryErrorClassifier.classify(error),
+                            errorDetail: TelemetryErrorClassifier.errorDetail(error)))
                 }
             }
         }
@@ -1993,7 +2053,8 @@ public final class SettingsViewModel {
                 }.value
                 self?.onTransformHistoryChanged?()
             } catch {
-                self?.logger.error("Failed to clear transform history error=\(error.localizedDescription, privacy: .public)")
+                self?.logger.error(
+                    "Failed to clear transform history error=\(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -2007,7 +2068,8 @@ public final class SettingsViewModel {
             do {
                 try fm.removeItem(atPath: dir)
             } catch {
-                logger.error("Failed to remove downloaded audio directory error=\(error.localizedDescription, privacy: .public)")
+                logger.error(
+                    "Failed to remove downloaded audio directory error=\(error.localizedDescription, privacy: .public)")
                 storageCleanupError = "Could not clear downloaded video audio: \(error.localizedDescription)"
                 refreshStats()
                 return
@@ -2016,7 +2078,8 @@ public final class SettingsViewModel {
         do {
             try fm.createDirectory(atPath: dir, withIntermediateDirectories: true)
         } catch {
-            logger.error("Failed to recreate downloaded audio directory error=\(error.localizedDescription, privacy: .public)")
+            logger.error(
+                "Failed to recreate downloaded audio directory error=\(error.localizedDescription, privacy: .public)")
             storageCleanupError = "Could not recreate the downloaded audio folder: \(error.localizedDescription)"
             refreshStats()
             return
@@ -2050,13 +2113,15 @@ public final class SettingsViewModel {
                 meetingsRoot: URL(fileURLWithPath: dir, isDirectory: true)
             )
             guard protectedSessions.isEmpty else {
-                storageCleanupError = "Finish or discard pending meeting recording recovery before clearing meeting audio."
+                storageCleanupError =
+                    "Finish or discard pending meeting recording recovery before clearing meeting audio."
                 refreshStats()
                 refreshPendingMeetingRecoveries()
                 return
             }
         } catch {
-            logger.error("Failed to inspect meeting recording locks error=\(error.localizedDescription, privacy: .public)")
+            logger.error(
+                "Failed to inspect meeting recording locks error=\(error.localizedDescription, privacy: .public)")
             storageCleanupError = "Could not verify pending meeting recordings: \(error.localizedDescription)"
             refreshStats()
             refreshPendingMeetingRecoveries()
@@ -2126,11 +2191,13 @@ public final class SettingsViewModel {
         let dirURL = URL(fileURLWithPath: dirPath, isDirectory: true)
         let fm = FileManager.default
 
-        guard let enumerator = fm.enumerator(
-            at: dirURL,
-            includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey],
-            options: [.skipsHiddenFiles]
-        ) else {
+        guard
+            let enumerator = fm.enumerator(
+                at: dirURL,
+                includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey],
+                options: [.skipsHiddenFiles]
+            )
+        else {
             return StorageDirectoryStats(count: 0, sizeBytes: 0)
         }
 
@@ -2154,11 +2221,13 @@ public final class SettingsViewModel {
         let dirURL = URL(fileURLWithPath: dirPath, isDirectory: true)
         let fm = FileManager.default
 
-        guard let contents = try? fm.contentsOfDirectory(
-            at: dirURL,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) else {
+        guard
+            let contents = try? fm.contentsOfDirectory(
+                at: dirURL,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            )
+        else {
             return StorageDirectoryStats(count: 0, sizeBytes: 0)
         }
 

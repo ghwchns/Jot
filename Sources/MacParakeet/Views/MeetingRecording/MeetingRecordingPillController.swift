@@ -1,11 +1,7 @@
 import AppKit
+import MacParakeetCore
 import MacParakeetViewModels
 import SwiftUI
-
-private final class MeetingRecordingClickablePanel: NSPanel {
-    override var canBecomeKey: Bool { false }
-    override var canBecomeMain: Bool { false }
-}
 
 /// Custom content view that forwards right-click for context menu.
 private class PillContentView: NSView {
@@ -68,8 +64,7 @@ private class PillMenuDelegate: NSObject {
 
 @MainActor
 final class MeetingRecordingPillController {
-    private var panel: NSPanel?
-    private var preservedFrameForNextShow: NSRect?
+    private var panel: FloatingPillPanel?
     private weak var pillView: MeetingRecordingAppKitPillView?
     private let pillViewModel: MeetingRecordingPillViewModel
     var onClick: (() -> Void)?
@@ -116,12 +111,7 @@ final class MeetingRecordingPillController {
         contentView.addSubview(view)
         self.pillView = view
 
-        let panel = MeetingRecordingClickablePanel(
-            contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
-            styleMask: [.nonactivatingPanel, .borderless],
-            backing: .buffered,
-            defer: false
-        )
+        let panel = FloatingPillPanel(role: .meeting, size: CGSize(width: panelWidth, height: panelHeight))
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
@@ -130,28 +120,13 @@ final class MeetingRecordingPillController {
         panel.isMovableByWindowBackground = true
         panel.contentView = contentView
 
-        if let preservedFrame = preservedFrameForNextShow {
-            panel.setFrame(preservedFrame, display: false)
-            preservedFrameForNextShow = nil
-        } else if let screen = NSScreen.main {
-            let frame = screen.visibleFrame
-            let x = frame.maxX - panelWidth
-            let y = frame.midY - panelHeight / 2
-            panel.setFrameOrigin(NSPoint(x: x, y: y))
-        }
+        panel.restorePillPosition()
 
         panel.orderFront(nil)
         self.panel = panel
     }
 
-    func hide(preserveFrameForNextShow: Bool = false) {
-        if preserveFrameForNextShow {
-            if let frame = panel?.frame {
-                preservedFrameForNextShow = frame
-            }
-        } else {
-            preservedFrameForNextShow = nil
-        }
+    func hide() {
         panel?.orderOut(nil)
         panel = nil
         pillView = nil
@@ -260,7 +235,7 @@ final class MeetingRecordingPillController {
         menu.addItem(stopItem)
 
         let openItem = NSMenuItem(
-            title: "Open MacParakeet", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
+            title: "Open Jot", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
         openItem.representedObject = "open"
         openItem.target = delegate
         if let openImage = NSImage(systemSymbolName: "bird", accessibilityDescription: nil) {
@@ -278,11 +253,11 @@ final class MeetingRecordingPillController {
         cancelItem.target = delegate
         cancelItem.attributedTitle = NSAttributedString(
             string: "Discard Recording",
-            attributes: [.foregroundColor: NSColor.systemRed]
+            attributes: [.foregroundColor: NSColor(white: 0.85, alpha: 1)]
         )
         if let cancelImage = NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: nil) {
             let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
-                .applying(.init(paletteColors: [.systemRed]))
+                .applying(.init(paletteColors: [.labelColor]))
             cancelItem.image = cancelImage.withSymbolConfiguration(config)
         }
         menu.addItem(cancelItem)
@@ -320,7 +295,7 @@ final class MeetingRecordingPillController {
         menu.addItem(.separator())
 
         let openItem = NSMenuItem(
-            title: "Open MacParakeet", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
+            title: "Open Jot", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
         openItem.representedObject = "open"
         openItem.target = delegate
         openItem.isEnabled = true
@@ -356,7 +331,7 @@ final class MeetingRecordingPillController {
         case .error:
             headerTitle = "Recording interrupted"
         default:
-            headerTitle = "MacParakeet"
+            headerTitle = "Jot"
         }
         let headerItem = NSMenuItem(title: headerTitle, action: nil, keyEquivalent: "")
         headerItem.isEnabled = false
@@ -365,7 +340,7 @@ final class MeetingRecordingPillController {
         menu.addItem(.separator())
 
         let openItem = NSMenuItem(
-            title: "Open MacParakeet", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
+            title: "Open Jot", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
         openItem.representedObject = "open"
         openItem.target = delegate
         openItem.isEnabled = true
@@ -510,7 +485,10 @@ private final class MeetingRecordingAppKitPillView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
-        onTap()
+        guard let window else { return }
+        let origin = window.frame.origin
+        window.performDrag(with: event)
+        if window.frame.origin == origin { onTap() }
     }
 
     private func setupLayers() {
@@ -547,7 +525,7 @@ private final class MeetingRecordingAppKitPillView: NSView {
         timeBadgeLayer.shadowOffset = CGSize(width: 0, height: -2)
         timeBadgeLayer.opacity = 0
 
-        timeDotLayer.fillColor = NSColor.systemRed.cgColor
+        timeDotLayer.fillColor = NSColor(white: 0.85, alpha: 1).cgColor
 
         timeTextLayer.font = badgeFont
         timeTextLayer.fontSize = badgeFont.pointSize
@@ -658,7 +636,7 @@ private final class MeetingRecordingAppKitPillView: NSView {
         // digits update crisply; the fade-in is driven separately by opacity.
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        timeDotLayer.fillColor = (isPaused ? NSColor.systemOrange : NSColor.systemRed).cgColor
+        timeDotLayer.fillColor = (isPaused ? NSColor(white: 0.55, alpha: 1) : NSColor(white: 0.85, alpha: 1)).cgColor
         if (timeTextLayer.string as? String) != text {
             timeTextLayer.string = text
         }

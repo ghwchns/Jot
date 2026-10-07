@@ -40,7 +40,9 @@ struct DictationSubTabPicker: View {
         } label: {
             Text(label(for: tab))
                 .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-                .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(isHovered ? 0.85 : 0.65))
+                .foregroundStyle(
+                    isSelected ? DesignSystem.Colors.onAccent : Color.primary.opacity(isHovered ? 0.85 : 0.65)
+                )
                 .padding(.horizontal, 16)
                 .padding(.vertical, 6)
                 .frame(minWidth: 70)

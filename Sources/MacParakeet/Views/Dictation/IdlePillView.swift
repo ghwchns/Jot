@@ -43,7 +43,8 @@ struct IdlePillView: View {
                 .fill(viewModel.isHovered ? DesignSystem.Colors.pillBackground : Color(white: 0.25, opacity: 0.9))
                 .overlay(
                     Capsule()
-                        .strokeBorder(DesignSystem.Colors.pillBorder.opacity(viewModel.isHovered ? 0.67 : 0.4), lineWidth: 0.5)
+                        .strokeBorder(
+                            DesignSystem.Colors.pillBorder.opacity(viewModel.isHovered ? 0.67 : 0.4), lineWidth: 0.5)
                 )
         }
         .frame(
@@ -122,22 +123,24 @@ struct IdlePillView: View {
     private func shortcutText(_ value: String) -> some View {
         Text(value)
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(Color(nsColor: NSColor(red: 0.85, green: 0.55, blue: 0.75, alpha: 1.0)))
+            .foregroundStyle(Color.white.opacity(0.8))
     }
 }
 
 #Preview {
     VStack(spacing: 40) {
-        IdlePillView(viewModel: {
-            let vm = IdlePillViewModel()
-            return vm
-        }())
+        IdlePillView(
+            viewModel: {
+                let vm = IdlePillViewModel()
+                return vm
+            }())
 
-        IdlePillView(viewModel: {
-            let vm = IdlePillViewModel()
-            vm.isHovered = true
-            return vm
-        }())
+        IdlePillView(
+            viewModel: {
+                let vm = IdlePillViewModel()
+                vm.isHovered = true
+                return vm
+            }())
     }
     .padding(30)
     .frame(width: 400, height: 200)

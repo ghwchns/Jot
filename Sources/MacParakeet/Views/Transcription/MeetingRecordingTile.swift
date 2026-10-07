@@ -451,7 +451,7 @@ private struct StartRecordingButton: View {
                 Text(permissionState.isReady ? "Start" : "Enable")
                     .font(DesignSystem.Typography.caption.weight(.semibold))
             }
-            .foregroundStyle(isHovered ? Color.white : accent)
+            .foregroundStyle(isHovered ? DesignSystem.Colors.onAccent : accent)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(
@@ -573,7 +573,7 @@ private struct StopConfirmCapsule: View {
                 Button(action: confirm) {
                     Text("End now")
                         .font(DesignSystem.Typography.caption.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(DesignSystem.Colors.onAccent)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
                         .background(Capsule().fill(DesignSystem.Colors.errorRed))
@@ -602,11 +602,11 @@ private struct StopConfirmCapsule: View {
                 Button(action: beginConfirmation) {
                     HStack(spacing: 6) {
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(.white)
+                            .fill(DesignSystem.Colors.onAccent)
                             .frame(width: 8, height: 8)
                         Text("Stop")
                             .font(DesignSystem.Typography.caption.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(DesignSystem.Colors.onAccent)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)

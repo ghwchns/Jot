@@ -153,7 +153,7 @@ struct VocabularyImportPreviewSheet: View {
                 .replaceAll,
                 title: "Replace entire vocabulary",
                 detail:
-                    "Remove words and snippets that aren't in this file, then import. Words MacParakeet learned automatically from dictation stay unless this file also lists them.",
+                    "Remove words and snippets that aren't in this file, then import. Words Jot learned automatically from dictation stay unless this file also lists them.",
                 destructive: true
             )
         }
@@ -201,8 +201,8 @@ struct VocabularyImportPreviewSheet: View {
             if preview.learnedWordsPreserved > 0 {
                 Text(
                     preview.learnedWordsPreserved == 1
-                        ? "1 word MacParakeet learned automatically from dictation stays on this Mac."
-                        : "\(preview.learnedWordsPreserved) words MacParakeet learned automatically from dictation stay on this Mac."
+                        ? "1 word Jot learned automatically from dictation stays on this Mac."
+                        : "\(preview.learnedWordsPreserved) words Jot learned automatically from dictation stay on this Mac."
                 )
                 .font(DesignSystem.Typography.caption)
                 .foregroundStyle(.secondary)

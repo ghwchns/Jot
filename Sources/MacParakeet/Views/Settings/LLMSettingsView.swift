@@ -721,11 +721,11 @@ struct LLMSettingsView: View {
         switch status {
         case .setUpNeeded:
             return
-                "Choose how MacParakeet should run AI features. Transcription, dictation, and meeting recording still work without this."
+                "Choose how Jot should run AI features. Transcription, dictation, and meeting recording still work without this."
         case .ready:
             return viewModel.configuredTasksDescription
         case .cannotConnect(let displayName, let message):
-            return "MacParakeet could not reach \(displayName): \(message)"
+            return "Jot could not reach \(displayName): \(message)"
         }
     }
 
