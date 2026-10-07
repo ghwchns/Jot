@@ -2,6 +2,13 @@
 
 > Status: **ACTIVE** - Build, sign, notarize, and auto-update workflow
 
+The personal Jot fork builds with `APP_NAME=Jot PERSONAL_BUILD=1 VERSION=0.8.9`.
+`PERSONAL_BUILD=1` marks the bundle explicitly and blocks both manual and
+automatic Sparkle checks and relaunches, so the official feed cannot replace
+the fork. Updates are applied manually after upstream review. The bundle ID
+and data paths remain compatible with the existing local installation.
+`BUILD_JOBS` bounds compiler parallelism for both Xcode and SwiftPM (default 8).
+
 This repo uses Swift packages. App distribution builds those packages through
 Xcode and assembles a `.app` bundle for Developer ID distribution. Xcode compiles
 asset catalogs and generates resource lookups that work after installation on

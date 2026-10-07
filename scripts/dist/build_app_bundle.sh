@@ -23,6 +23,8 @@ set -euo pipefail
 #   UNIVERSAL           (default: 0) build universal (arm64+x86_64) if 1
 #   SKIP_BUILD          (default: 0) reuse existing Release binary if 1
 #   BUILD_SYSTEM        (default: xcodebuild) app distribution requires xcodebuild
+#   BUILD_JOBS          (default: 8) compiler parallelism for Xcode and SwiftPM
+#   PERSONAL_BUILD      (default: 0) block automatic and manual upstream Sparkle updates
 #   XCODE_DERIVED_DATA  (default: .build/xcode-dist) derived data path for xcodebuild
 #   XCODE_BUILD_LOG     (default: /dev/null) append Xcode output and build timings here
 #   FFMPEG_PATH         (default: auto-download static build) source ffmpeg binary to bundle
@@ -61,6 +63,16 @@ MIN_MACOS_VERSION="${MIN_MACOS_VERSION:-$DEFAULT_MEETING_ECHO_MIN_MACOS_VERSION}
 UNIVERSAL="${UNIVERSAL:-0}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 BUILD_SYSTEM="${BUILD_SYSTEM:-xcodebuild}"
+BUILD_JOBS="${BUILD_JOBS:-8}"
+PERSONAL_BUILD="${PERSONAL_BUILD:-0}"
+if ! [[ "$BUILD_JOBS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "BUILD_JOBS must be a positive integer" >&2
+  exit 1
+fi
+if [[ "$PERSONAL_BUILD" != "0" && "$PERSONAL_BUILD" != "1" ]]; then
+  echo "PERSONAL_BUILD must be 0 or 1" >&2
+  exit 1
+fi
 if [[ "$BUILD_SYSTEM" != "xcodebuild" ]]; then
   echo "App distribution requires BUILD_SYSTEM=xcodebuild for compiled assets and portable resource-bundle lookup. Unset BUILD_SYSTEM or set it to xcodebuild; swift build/test and SwiftPM CLI builds remain supported." >&2
   exit 1
@@ -94,9 +106,9 @@ build_swiftpm_helper() {
 
   pushd "$ROOT_DIR" >/dev/null
   if [[ "$UNIVERSAL" == "1" ]]; then
-    swift build -c release --arch arm64 --arch x86_64 --product "$product"
+    swift build -j "$BUILD_JOBS" -c release --arch arm64 --arch x86_64 --product "$product"
   else
-    swift build -c release --product "$product"
+    swift build -j "$BUILD_JOBS" -c release --product "$product"
   fi
   popd >/dev/null
 }
@@ -134,7 +146,7 @@ run_xcodebuild() {
   # behavior when it defaults to /dev/null) while duplicating stderr to both
   # the log and the console, so the configured log is complete and build
   # failures stay visible in job output either way.
-  xcodebuild "$@" >>"$XCODE_BUILD_LOG" 2> >(tee -a "$XCODE_BUILD_LOG" >&2)
+  xcodebuild -jobs "$BUILD_JOBS" "$@" >>"$XCODE_BUILD_LOG" 2> >(tee -a "$XCODE_BUILD_LOG" >&2)
 }
 
 build_xcodebuild() {
@@ -645,6 +657,12 @@ EXPECTED_SU_PUBLIC_ED_KEY="2aqRU0Agz+xxZwt0kLybmKz/SAvZUsyn+z9fU0I6ynY="
 CHECKOUT_URL="${MACPARAKEET_CHECKOUT_URL:-}"
 LS_VARIANT_ID="${MACPARAKEET_LS_VARIANT_ID:-}"
 LICENSING_PLIST=""
+PERSONAL_BUILD_PLIST=""
+if [[ "$PERSONAL_BUILD" == "1" ]]; then
+  PERSONAL_BUILD_PLIST="  <key>MacParakeetPersonalBuild</key><true/>
+  <key>SUEnableAutomaticChecks</key><false/>
+  <key>SUAutomaticallyUpdate</key><false/>"
+fi
 if [[ -n "$CHECKOUT_URL" ]]; then
   LICENSING_PLIST+="  <key>MacParakeetCheckoutURL</key>\n"
   LICENSING_PLIST+="  <string>${CHECKOUT_URL}</string>\n"
@@ -658,6 +676,7 @@ cat >"$INFO_PLIST" <<EOF
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+${PERSONAL_BUILD_PLIST}
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
