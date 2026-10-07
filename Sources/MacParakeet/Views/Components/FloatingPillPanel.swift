@@ -10,6 +10,7 @@ final class FloatingPillPanel: NSPanel, NSWindowDelegate {
     private let defaults: UserDefaults
     private var restoringPosition = false
     private var resetObserver: NSObjectProtocol?
+    private var traceMonitor: Any?
 
     init(role: FloatingPillRole, size: CGSize, takesKey: Bool = false, defaults: UserDefaults = .standard) {
         self.role = role
@@ -23,6 +24,16 @@ final class FloatingPillPanel: NSPanel, NSWindowDelegate {
         // The pill's interaction view owns down/drag/up, including click completion.
         // WindowServer background dragging would bypass that lifecycle.
         isMovableByWindowBackground = false
+        if FloatingPillRuntimeTrace.enabled {
+            FloatingPillRuntimeTrace.start()
+            traceMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]) {
+                [weak self] event in
+                if let self, event.windowNumber == self.windowNumber || self.frame.contains(NSEvent.mouseLocation) {
+                    self.trace("localMonitor", event: event)
+                }
+                return event
+            }
+        }
         resetObserver = NotificationCenter.default.addObserver(
             forName: .floatingPillPositionsDidReset, object: nil, queue: .main
         ) { [weak self] _ in
@@ -32,10 +43,45 @@ final class FloatingPillPanel: NSPanel, NSWindowDelegate {
 
     deinit {
         if let resetObserver { NotificationCenter.default.removeObserver(resetObserver) }
+        if let traceMonitor { NSEvent.removeMonitor(traceMonitor) }
     }
 
     override var canBecomeKey: Bool { takesKey }
     override var canBecomeMain: Bool { false }
+
+    override func orderFront(_ sender: Any?) {
+        super.orderFront(sender)
+        trace("orderFront")
+    }
+
+    override func sendEvent(_ event: NSEvent) {
+        if [.leftMouseDown, .leftMouseDragged, .leftMouseUp].contains(event.type) {
+            trace("panelSendEvent", event: event)
+        }
+        super.sendEvent(event)
+    }
+
+    private func trace(_ stage: String, event: NSEvent? = nil) {
+        guard FloatingPillRuntimeTrace.enabled else { return }
+        var metadata: [String: Any] = [
+            "role": role.rawValue, "panelWindowNumber": windowNumber,
+            "frame": FloatingPillRuntimeTrace.rect(frame), "takesKey": takesKey,
+            "isKey": isKeyWindow, "visible": isVisible, "ignoresMouseEvents": ignoresMouseEvents,
+            "acceptsMouseMovedEvents": acceptsMouseMovedEvents, "styleMask": styleMask.rawValue,
+            "isMovable": isMovable, "backgroundMove": isMovableByWindowBackground,
+            "collectionBehavior": collectionBehavior.rawValue, "level": level.rawValue
+        ]
+        if let contentView { metadata["tree"] = FloatingPillRuntimeTrace.view(contentView) }
+        if let event {
+            metadata["mouse"] = FloatingPillRuntimeTrace.mouse(event)
+            if let contentView {
+                let owner = contentView.hitTest(contentView.superview?.convert(event.locationInWindow, from: nil)
+                    ?? event.locationInWindow)
+                metadata["rootHitOwner"] = owner.map { String(describing: type(of: $0)) } ?? "nil"
+            }
+        }
+        FloatingPillRuntimeTrace.write(stage, metadata)
+    }
 
     private var anchorOffset: CGPoint {
         CGPoint(
@@ -67,6 +113,7 @@ final class FloatingPillPanel: NSPanel, NSWindowDelegate {
     }
 
     func windowDidMove(_ notification: Notification) {
+        trace("windowDidMove")
         guard !restoringPosition, let screen else { return }
         FloatingPillPosition(
             screenID: Self.screenID(screen),
@@ -104,12 +151,16 @@ class FloatingPillInteractionView: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func mouseDown(with event: NSEvent) {
+        FloatingPillRuntimeTrace.write("ownerMouseDown", ["class": String(describing: type(of: self)),
+            "mouse": FloatingPillRuntimeTrace.mouse(event)])
         guard let window else { return }
         dragStart = DragStart(
             pointer: window.convertPoint(toScreen: event.locationInWindow), origin: window.frame.origin)
     }
 
     override func mouseDragged(with event: NSEvent) {
+        FloatingPillRuntimeTrace.write("ownerMouseDragged", ["class": String(describing: type(of: self)),
+            "mouse": FloatingPillRuntimeTrace.mouse(event), "hasDragStart": dragStart != nil])
         guard let window, var start = dragStart else { return }
         let pointer = window.convertPoint(toScreen: event.locationInWindow)
         let delta = CGPoint(x: pointer.x - start.pointer.x, y: pointer.y - start.pointer.y)
@@ -119,6 +170,8 @@ class FloatingPillInteractionView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
+        FloatingPillRuntimeTrace.write("ownerMouseUp", ["class": String(describing: type(of: self)),
+            "mouse": FloatingPillRuntimeTrace.mouse(event), "hasDragStart": dragStart != nil])
         let start = dragStart
         dragStart = nil
         guard let start, !start.moved else { return }
