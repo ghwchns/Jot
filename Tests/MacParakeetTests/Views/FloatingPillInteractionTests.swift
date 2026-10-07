@@ -12,9 +12,14 @@ final class FloatingPillInteractionTests: XCTestCase {
     func testIdleClickWaitsForReleaseAndDragNeverStartsDictation() throws {
         try withDefaults { defaults in
             let panel = FloatingPillPanel(role: .dictation, size: CGSize(width: 350, height: 90), defaults: defaults)
-            let tracker = IdlePillTrackingView(frame: NSRect(origin: .zero, size: panel.frame.size))
+            let viewModel = IdlePillViewModel()
+            viewModel.anchorsToTop = true
+            let content = IdlePillContentView(frame: NSRect(origin: .zero, size: panel.frame.size), viewModel: viewModel)
+            let tracker = content.trackingView
             tracker.collapsedPillRect = NSRect(x: 145, y: 66, width: 60, height: 24)
-            panel.contentView = tracker
+            panel.contentView = content
+            content.layoutSubtreeIfNeeded()
+            XCTAssertTrue(content.hitTest(CGPoint(x: 175, y: 78)) === tracker)
             var clicks = 0
             tracker.onClicked = { clicks += 1 }
             try checkClickAndDrag(owner: tracker, panel: panel, point: CGPoint(x: 175, y: 78), clicks: { clicks })
@@ -35,10 +40,14 @@ final class FloatingPillInteractionTests: XCTestCase {
         }
     }
 
-    func testLiveSwiftUIRepresentableOwnsMovementWithoutBackgroundDragging() throws {
+    func testLiveProductionOverlayOwnsMovementWithoutBackgroundDragging() throws {
         try withDefaults { defaults in
-            let panel = FloatingPillPanel(role: .dictation, size: CGSize(width: 100, height: 30), defaults: defaults)
-            let host = NSHostingView(rootView: FloatingPillDragArea().frame(width: 100, height: 30))
+            let panel = FloatingPillPanel(
+                role: .dictation, size: CGSize(width: 300, height: 160), takesKey: true, defaults: defaults)
+            let model = DictationOverlayViewModel()
+            model.anchorsToTop = true
+            let host = NSHostingView(rootView: DictationOverlayView(viewModel: model))
+            host.frame = NSRect(origin: .zero, size: panel.frame.size)
             panel.contentView = host
             host.layoutSubtreeIfNeeded()
             let owner = try XCTUnwrap(findInteractionView(in: host))
@@ -46,8 +55,11 @@ final class FloatingPillInteractionTests: XCTestCase {
             XCTAssertTrue(panel.isMovable, "AppKit must retain display-reconfiguration relocation")
             XCTAssertFalse(panel.isMovableByWindowBackground)
             XCTAssertTrue(owner.acceptsFirstMouse(for: nil))
+            let center = CGPoint(x: owner.bounds.midX, y: owner.bounds.midY)
+            let hitPoint = host.superview!.convert(center, from: owner)
+            XCTAssertTrue(host.hitTest(hitPoint) === owner)
             let origin = panel.frame.origin
-            try drag(owner, in: panel, from: CGPoint(x: 50, y: 15), by: CGPoint(x: 80, y: 45))
+            try drag(owner, in: panel, from: center, by: CGPoint(x: 80, y: 45))
             XCTAssertEqual(panel.frame.origin, CGPoint(x: origin.x + 80, y: origin.y + 45))
         }
     }
@@ -59,9 +71,11 @@ final class FloatingPillInteractionTests: XCTestCase {
             let idle = FloatingPillPanel(role: .dictation, size: CGSize(width: 350, height: 90), defaults: defaults)
             idle.restorePillPosition()
             let defaultOrigin = idle.frame.origin
-            let tracker = IdlePillTrackingView(frame: NSRect(origin: .zero, size: idle.frame.size))
+            let content = IdlePillContentView(
+                frame: NSRect(origin: .zero, size: idle.frame.size), viewModel: IdlePillViewModel())
+            let tracker = content.trackingView
             tracker.collapsedPillRect = tracker.bounds
-            idle.contentView = tracker
+            idle.contentView = content
             try drag(tracker, in: idle, from: CGPoint(x: 175, y: 78), by: CGPoint(x: -40, y: -120))
             let saved = try XCTUnwrap(FloatingPillPosition.load(for: .dictation, defaults: defaults))
             let recording = FloatingPillPanel(

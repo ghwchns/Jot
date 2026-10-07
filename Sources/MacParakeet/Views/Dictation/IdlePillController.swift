@@ -96,6 +96,29 @@ final class IdlePillTrackingView: FloatingPillInteractionView {
     }
 }
 
+/// The native interaction owner sits outside SwiftUI's hosting hit router.
+/// SwiftUI draws the pill; this root routes its visible surface to the tracker.
+final class IdlePillContentView: NSView {
+    let trackingView: IdlePillTrackingView
+
+    init(frame: NSRect, viewModel: IdlePillViewModel) {
+        trackingView = IdlePillTrackingView(frame: NSRect(origin: .zero, size: frame.size))
+        super.init(frame: frame)
+        let hosting = NSHostingView(rootView: IdlePillView(viewModel: viewModel))
+        hosting.frame = bounds
+        hosting.autoresizingMask = [.width, .height]
+        trackingView.autoresizingMask = [.width, .height]
+        addSubview(hosting)
+        addSubview(trackingView)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        trackingView.hitTest(convert(point, from: superview))
+    }
+}
+
 // MARK: - Idle Pill Controller
 
 /// Manages the persistent idle pill panel — always visible when not dictating.
@@ -103,7 +126,6 @@ final class IdlePillTrackingView: FloatingPillInteractionView {
 @MainActor
 final class IdlePillController {
     private var panel: FloatingPillPanel?
-    private var hostingView: NSHostingView<IdlePillView>?
     private var trackingView: IdlePillTrackingView?
 
     private let viewModel: IdlePillViewModel
@@ -115,15 +137,10 @@ final class IdlePillController {
     func show() {
         if panel != nil { return }
 
-        let view = IdlePillView(viewModel: viewModel)
-        // No `.tint(...)` — pill is fully custom-drawn (no .borderedProminent /
-        // Toggle / ProgressView), and `hostingView: NSHostingView<IdlePillView>`
-        // is typed against the bare view.
-        let hosting = NSHostingView(rootView: view)
-
         let panelWidth: CGFloat = 350
         let panelHeight: CGFloat = 90
-        hosting.frame = NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight)
+        let content = IdlePillContentView(
+            frame: NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight), viewModel: viewModel)
 
         let panel = FloatingPillPanel(role: .dictation, size: CGSize(width: panelWidth, height: panelHeight))
         panel.isOpaque = false
@@ -131,11 +148,10 @@ final class IdlePillController {
         panel.hasShadow = false
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.contentView = hosting
+        panel.contentView = content
 
         // Mouse tracking overlay for hover + click
-        let tracker = IdlePillTrackingView(frame: hosting.bounds)
-        tracker.autoresizingMask = [.width, .height]
+        let tracker = content.trackingView
         tracker.onEnter = { [weak self] in
             Task { @MainActor in self?.viewModel.isHovered = true }
         }
@@ -146,10 +162,8 @@ final class IdlePillController {
             Task { @MainActor in self?.viewModel.onStartDictation?() }
         }
 
-        hosting.addSubview(tracker)
         trackingView = tracker
         self.panel = panel
-        self.hostingView = hosting
         reposition()
 
         panel.orderFront(nil)
@@ -180,7 +194,6 @@ final class IdlePillController {
     func hide() {
         panel?.orderOut(nil)
         panel = nil
-        hostingView = nil
         trackingView = nil
     }
 }
