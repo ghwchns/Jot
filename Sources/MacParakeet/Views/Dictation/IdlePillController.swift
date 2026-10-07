@@ -48,8 +48,6 @@ final class IdlePillTrackingView: FloatingPillInteractionView {
     override func mouseMoved(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         let activeRect = isExpanded ? expandedPillRect : collapsedPillRect
-        FloatingPillRuntimeTrace.write("idleMouseMoved", ["mouse": FloatingPillRuntimeTrace.mouse(event),
-            "local": FloatingPillRuntimeTrace.point(point), "activeRect": FloatingPillRuntimeTrace.rect(activeRect)])
 
         if activeRect.contains(point) {
             if !isInsidePill {
@@ -69,9 +67,6 @@ final class IdlePillTrackingView: FloatingPillInteractionView {
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         let activeRect = isExpanded ? expandedPillRect : collapsedPillRect
-        FloatingPillRuntimeTrace.write("idleMouseDownGate", ["mouse": FloatingPillRuntimeTrace.mouse(event),
-            "local": FloatingPillRuntimeTrace.point(point), "activeRect": FloatingPillRuntimeTrace.rect(activeRect),
-            "accepted": activeRect.contains(point)])
         guard activeRect.contains(point) else { return }
         super.mouseDown(with: event)
     }
@@ -86,13 +81,7 @@ final class IdlePillTrackingView: FloatingPillInteractionView {
         let activeRect = isExpanded ? expandedPillRect : collapsedPillRect
         // AppKit passes a point in the superview's coordinates. The hosting
         // view is flipped, while this tracker uses native bottom-up coordinates.
-        let local = convert(point, from: superview)
-        let accepted = activeRect.contains(local)
-        FloatingPillRuntimeTrace.write("idleHitTest", ["incoming": FloatingPillRuntimeTrace.point(point),
-            "local": FloatingPillRuntimeTrace.point(local), "frame": FloatingPillRuntimeTrace.rect(frame),
-            "bounds": FloatingPillRuntimeTrace.rect(bounds), "activeRect": FloatingPillRuntimeTrace.rect(activeRect),
-            "expanded": isExpanded, "accepted": accepted])
-        return accepted ? self : nil
+        return activeRect.contains(convert(point, from: superview)) ? self : nil
     }
 }
 

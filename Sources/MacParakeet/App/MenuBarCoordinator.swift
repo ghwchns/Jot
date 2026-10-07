@@ -854,8 +854,6 @@ final class MenuBarCoordinator: NSObject, NSMenuDelegate {
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
-        FloatingPillRuntimeTrace.write("menuNeedsUpdateBegin", ["statusMenu": menu === statusItem?.menu])
-        defer { FloatingPillRuntimeTrace.write("menuNeedsUpdateEnd") }
         let environmentReady = environmentProvider() != nil
         let meetingPresentation = Self.meetingRecordingMenuPresentation(
             environmentReady: environmentReady,
@@ -898,8 +896,6 @@ final class MenuBarCoordinator: NSObject, NSMenuDelegate {
 
     func menuWillOpen(_ menu: NSMenu) {
         guard menu === statusItem?.menu else { return }
-        FloatingPillRuntimeTrace.write("menuWillOpenBegin")
-        defer { FloatingPillRuntimeTrace.write("menuWillOpenEnd") }
         let frontmost = didStageFrontmostApplication ? stagedFrontmostApplication : nil
         clearStagedFrontmostApplication()
         onPrepareMenuBarTransforms?(frontmost)
@@ -907,7 +903,6 @@ final class MenuBarCoordinator: NSObject, NSMenuDelegate {
 
     func menuDidClose(_ menu: NSMenu) {
         guard menu === statusItem?.menu else { return }
-        FloatingPillRuntimeTrace.write("menuDidClose")
         clearStagedFrontmostApplication()
     }
 
