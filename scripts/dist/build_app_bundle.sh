@@ -53,7 +53,7 @@ DIST_DIR="$ROOT_DIR/dist"
 
 . "$ROOT_DIR/scripts/dist/meeting_echo_asset_defaults.sh"
 
-APP_NAME="${APP_NAME:-MacParakeet}"
+APP_NAME="${APP_NAME:-Jot}"
 BUNDLE_ID="${BUNDLE_ID:-com.macparakeet.MacParakeet}"
 VERSION="${VERSION:-0.0.0}"
 BUILD_NUMBER="${BUILD_NUMBER:-$(date -u +%Y%m%d%H%M%S)}"
@@ -64,7 +64,7 @@ UNIVERSAL="${UNIVERSAL:-0}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 BUILD_SYSTEM="${BUILD_SYSTEM:-xcodebuild}"
 BUILD_JOBS="${BUILD_JOBS:-8}"
-PERSONAL_BUILD="${PERSONAL_BUILD:-0}"
+PERSONAL_BUILD="${PERSONAL_BUILD:-1}"
 if ! [[ "$BUILD_JOBS" =~ ^[1-9][0-9]*$ ]]; then
   echo "BUILD_JOBS must be a positive integer" >&2
   exit 1
@@ -728,11 +728,11 @@ ${PERSONAL_BUILD_PLIST}
     </dict>
   </dict>
   <key>NSMicrophoneUsageDescription</key>
-  <string>MacParakeet needs microphone access for dictation.</string>
+  <string>${APP_NAME} needs microphone access for dictation.</string>
   <key>NSAudioCaptureUsageDescription</key>
-  <string>MacParakeet needs system audio recording access for meeting recording.</string>
+  <string>${APP_NAME} needs system audio recording access for meeting recording.</string>
   <key>NSCalendarsFullAccessUsageDescription</key>
-  <string>MacParakeet reads your calendar so it can remind you before a meeting starts and (optionally) begin recording for you. Events stay on your Mac.</string>
+  <string>${APP_NAME} reads your calendar so it can remind you before a meeting starts and (optionally) begin recording for you. Events stay on your Mac.</string>
   <key>SUFeedURL</key>
   <string>${SU_FEED_URL}</string>
   <key>SUEnableAutomaticChecks</key>
