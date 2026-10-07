@@ -20,9 +20,9 @@ enum BreathWaveIcon {
         case .idle:
             return baseIcon
         case .recording:
-            return compositeIcon(base: baseIcon, pointSize: pointSize, badgeColor: .controlTextColor)
+            return compositeIcon(base: baseIcon, pointSize: pointSize, badgeColor: .systemRed)
         case .processing:
-            return compositeIcon(base: baseIcon, pointSize: pointSize, badgeColor: .secondaryLabelColor)
+            return compositeIcon(base: baseIcon, pointSize: pointSize, badgeColor: .systemOrange)
         }
     }
 

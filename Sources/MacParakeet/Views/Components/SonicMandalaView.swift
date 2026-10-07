@@ -35,7 +35,7 @@ struct SonicMandalaView: View {
                 // Gradient fill
                 let gradient = Gradient(colors: [
                     DesignSystem.Colors.accent,
-                    DesignSystem.Colors.accentDark,
+                    Color(red: 0.95, green: 0.75, blue: 0.30),  // gold
                 ])
                 context.fill(
                     path,

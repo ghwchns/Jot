@@ -1072,7 +1072,7 @@ private final class CallbackMenuItem: NSMenuItem {
         if isDestructive {
             self.attributedTitle = NSAttributedString(
                 string: title,
-                attributes: [.foregroundColor: NSColor.labelColor]
+                attributes: [.foregroundColor: NSColor.systemRed]
             )
         }
     }

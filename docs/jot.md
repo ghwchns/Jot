@@ -1,7 +1,9 @@
 # Using Jot
 
 Jot is a personal MacParakeet fork. Dictation and meeting speech recognition
-use the local Parakeet v3 model on this Mac.
+use the local Parakeet v3 model on this Mac. The app retains its original
+MacParakeet/macOS color scheme and clear action/status hierarchy, with the
+approved gray Jot icon.
 
 - Tap physical **F5** to start dictation. Tap **F5** again to stop and paste.
   For a cold AirPods connection, the chosen practice is to pause about two

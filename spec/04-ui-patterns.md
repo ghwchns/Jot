@@ -27,8 +27,9 @@ Design philosophy: **Simple, native, stays out of the way.** No chrome, no clutt
 
 - Jot uses the approved grayscale note/speech bitmap through
   `BreathWaveIcon.brandMark` and `BreathWaveLogo`.
-- App windows and recording pills use neutral gray design tokens in both
-  light and dark appearances. Labels and icons retain state meaning.
+- App windows and recording pills retain the original MacParakeet/macOS
+  styling: clear primary actions and selection, native neutral secondary
+  controls, and semantic recording/status colors in both appearances.
 - See `docs/brand-identity.md` for the canonical assets. About retains
   upstream attribution and licenses; promotional sidebar/footer content is
   not part of the personal app.

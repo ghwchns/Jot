@@ -387,13 +387,6 @@ struct DictationOverlayView: View {
                 )
                 .animation(.easeInOut(duration: Self.stateTransitionSeconds), value: viewModel.pillStateKey)
                 .animation(.easeOut(duration: 0.45), value: noSpeechExpanded)
-                .overlay {
-                    if case .recording = viewModel.state {
-                        FloatingPillDragArea()
-                            .frame(width: 64, height: 24)
-                            .help("Drag to move the pill")
-                    }
-                }
         }
     }
 
@@ -468,15 +461,19 @@ struct DictationOverlayView: View {
                 .fill(DesignSystem.Colors.recordingRed)
                 .frame(width: 5, height: 5)
 
-            // Recording timer
-            Text(viewModel.formattedElapsed)
-                .font(.system(size: 12, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.6))
-                .frame(width: 36)
+            HStack(spacing: 12) {
+                Text(viewModel.formattedElapsed)
+                    .font(.system(size: 12, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.6))
+                    .frame(width: 36)
 
-            // Waveform
-            WaveformView(audioLevel: viewModel.audioLevel)
-                .frame(width: 64)
+                WaveformView(audioLevel: viewModel.audioLevel)
+                    .frame(width: 64)
+            }
+            .overlay {
+                FloatingPillDragArea()
+                    .help("Drag to move the pill")
+            }
         }
     }
 
@@ -662,15 +659,19 @@ struct DictationOverlayView: View {
             .buttonStyle(.plain)
             .animation(.easeInOut(duration: 0.15), value: isCancelHovered)
 
-            // Recording timer
-            Text(viewModel.formattedElapsed)
-                .font(.system(size: 12, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.6))
-                .frame(width: 36)
+            HStack(spacing: 12) {
+                Text(viewModel.formattedElapsed)
+                    .font(.system(size: 12, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.6))
+                    .frame(width: 36)
 
-            // Waveform
-            WaveformView(audioLevel: viewModel.audioLevel)
-                .frame(width: 64)
+                WaveformView(audioLevel: viewModel.audioLevel)
+                    .frame(width: 64)
+            }
+            .overlay {
+                FloatingPillDragArea()
+                    .help("Drag to move the pill")
+            }
 
             // Stop button
             Button(action: { viewModel.onStop?() }) {
@@ -993,7 +994,7 @@ struct DictationOverlayView: View {
                             .foregroundStyle(.white.opacity(0.9))
                         Text(key)
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.white.opacity(0.8))
+                            .foregroundStyle(Color(nsColor: NSColor(red: 0.85, green: 0.55, blue: 0.75, alpha: 1.0)))
                     }
                 } else {
                     Text(tooltip)

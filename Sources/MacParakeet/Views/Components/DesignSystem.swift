@@ -1,63 +1,160 @@
 import SwiftUI
 
 /// Centralized design tokens for consistent styling across the app.
-/// Jot uses neutral gray in light and dark appearances.
+/// "Warm Magical" design system — coral-orange accent, generous spacing, rounded headlines.
 enum DesignSystem {
     // MARK: - Colors
 
     enum Colors {
-        private static func gray(_ light: Double, _ dark: Double) -> Color {
-            Color(light: Color(white: light), dark: Color(white: dark))
-        }
+        // Accent — warm coral-orange (parakeet plumage)
+        static let accent = Color(
+            light: .init(red: 0.91, green: 0.42, blue: 0.23),
+            dark: .init(red: 1.0, green: 0.54, blue: 0.36))
+        static let accentLight = Color(
+            light: .init(red: 1.0, green: 0.94, blue: 0.92),
+            dark: .init(red: 1.0, green: 0.54, blue: 0.36).opacity(0.12))
+        static let accentDark = Color(
+            light: .init(red: 0.77, green: 0.33, blue: 0.16),
+            dark: .init(red: 0.91, green: 0.42, blue: 0.23))
 
-        static let accent = gray(0.30, 0.78)
-        static let accentLight = gray(0.94, 0.23)
-        static let accentDark = gray(0.20, 0.88)
-        static let onAccent = Color(light: .white, dark: .black)
-        static let background = gray(0.98, 0.11)
-        static let surface = gray(1, 0.17)
-        static let surfaceElevated = gray(0.96, 0.23)
-        static let textPrimary = gray(0.10, 1)
-        static let textSecondary = gray(0.42, 0.65)
-        static let textTertiary = gray(0.61, 0.40)
+        // Backgrounds — warm off-whites, not pure white
+        static let background = Color(
+            light: .init(red: 0.98, green: 0.98, blue: 0.97),
+            dark: .init(red: 0.11, green: 0.11, blue: 0.12))
+        static let surface = Color(
+            light: .white,
+            dark: .init(red: 0.17, green: 0.17, blue: 0.18))
+        static let surfaceElevated = Color(
+            light: .init(red: 0.96, green: 0.96, blue: 0.94),
+            dark: .init(red: 0.23, green: 0.23, blue: 0.24))
+
+        // Text — high contrast primaries
+        static let textPrimary = Color(
+            light: .init(red: 0.10, green: 0.10, blue: 0.10),
+            dark: .white)
+        static let textSecondary = Color(
+            light: .init(red: 0.42, green: 0.42, blue: 0.42),
+            dark: .init(red: 0.63, green: 0.63, blue: 0.65))
+        static let textTertiary = Color(
+            light: .init(red: 0.61, green: 0.61, blue: 0.61),
+            dark: .init(red: 0.39, green: 0.39, blue: 0.40))
+
+        /// Neutral label tint — for `.bordered` buttons that should NOT carry
+        /// brand color. Resolves to the system label color (white in dark mode,
+        /// near-black in light). Used via `.parakeetAction(.secondary)`.
         static let tintNeutral = Color.primary
 
-        // State is also conveyed by labels, shapes, and icons.
-        static let successGreen = accent
-        static let warningAmber = accent
-        static let errorRed = accent
-        static let border = gray(0.91, 0.30)
-        static let divider = gray(0.94, 0.25)
-        static let rowHoverBackground = gray(0.96, 0.23)
-        static let cardBackground = surface
+        // Semantic
+        static let successGreen = Color(
+            light: .init(red: 0.20, green: 0.66, blue: 0.33),
+            dark: .init(red: 0.29, green: 0.87, blue: 0.50))
+        static let warningAmber = Color(
+            light: .init(red: 0.96, green: 0.65, blue: 0.14),
+            dark: .init(red: 0.98, green: 0.75, blue: 0.14))
+        static let errorRed = Color(
+            light: .init(red: 0.90, green: 0.30, blue: 0.26),
+            dark: .init(red: 0.97, green: 0.44, blue: 0.44))
+        static let onAccent = Color.white
+
+        // Borders & dividers
+        static let border = Color(
+            light: .init(red: 0.91, green: 0.91, blue: 0.88),
+            dark: .init(red: 0.30, green: 0.30, blue: 0.32))
+        static let divider = Color(
+            light: .init(red: 0.94, green: 0.94, blue: 0.91),
+            dark: .init(red: 0.25, green: 0.25, blue: 0.27))
+
+        // Interactive
+        static let rowHoverBackground = Color(
+            light: .init(red: 0.96, green: 0.96, blue: 0.94),
+            dark: .primary.opacity(0.06))
+        static let cardBackground = Color(
+            light: .white,
+            dark: .init(red: 0.17, green: 0.17, blue: 0.18))
+
+        // Playback
         static let playbackTrack = Color.primary.opacity(0.08)
-        static let playbackFill = accent
+        static let playbackFill = Color.accentColor
 
-        // Speaker names remain the primary distinction in transcripts.
+        // Speaker diarization palette — distinct, readable in both light/dark
         static let transcriptSpeakerLabelAlpha: CGFloat = 0.85
-        static let speakerColors: [Color] = [gray(0.25, 0.90), gray(0.40, 0.75), gray(0.50, 0.65)]
-        static func speakerColor(for index: Int) -> Color { speakerColors[index % speakerColors.count] }
+        static let speakerColors: [Color] = [
+            Color(
+                light: .init(red: 0.20, green: 0.51, blue: 0.84),
+                dark: .init(red: 0.42, green: 0.68, blue: 0.96)),  // Blue
+            Color(
+                light: .init(red: 0.72, green: 0.33, blue: 0.64),
+                dark: .init(red: 0.85, green: 0.52, blue: 0.78)),  // Purple
+            Color(
+                light: .init(red: 0.16, green: 0.60, blue: 0.46),
+                dark: .init(red: 0.30, green: 0.78, blue: 0.62)),  // Teal
+            Color(
+                light: .init(red: 0.82, green: 0.52, blue: 0.14),
+                dark: .init(red: 0.95, green: 0.68, blue: 0.30)),  // Amber
+            Color(
+                light: .init(red: 0.80, green: 0.28, blue: 0.28),
+                dark: .init(red: 0.95, green: 0.45, blue: 0.45)),  // Red
+            Color(
+                light: .init(red: 0.40, green: 0.56, blue: 0.24),
+                dark: .init(red: 0.56, green: 0.76, blue: 0.38)),  // Green
+        ]
 
-        static let youtubeRed = accent
-        static let podcastPurple = accent
-        static let xMark = accent
-        static let vimeoBlue = accent
-        static let facebookBlue = accent
-        static let tiktokTeal = accent
-        static let instagramPink = accent
-        static let twitchPurple = accent
+        static func speakerColor(for index: Int) -> Color {
+            speakerColors[index % speakerColors.count]
+        }
 
+        // YouTube badge
+        static let youtubeRed = Color.red
+
+        // Apple Podcasts badge
+        static let podcastPurple = Color(red: 0.55, green: 0.34, blue: 0.86)
+
+        // X badge — adaptive mark (near-black on light, near-white on dark),
+        // matching X's appearance-aware branding.
+        static let xMark = Color(
+            light: .init(red: 0.09, green: 0.09, blue: 0.11),
+            dark: .init(red: 0.93, green: 0.93, blue: 0.95))
+
+        // Vimeo badge — "Vimeo Blue" #1AB7EA
+        static let vimeoBlue = Color(red: 0.102, green: 0.718, blue: 0.918)
+
+        // Facebook badge — current Facebook Blue #1877F2
+        static let facebookBlue = Color(red: 0.094, green: 0.467, blue: 0.949)
+
+        // TikTok badge — the cyan accent reads most "TikTok"; deepened on light
+        // backgrounds for contrast, full #25F4EE on dark.
+        static let tiktokTeal = Color(
+            light: .init(red: 0.0, green: 0.70, blue: 0.73),
+            dark: .init(red: 0.145, green: 0.957, blue: 0.933))
+
+        // Instagram badge — representative magenta from the brand gradient #E1306C
+        static let instagramPink = Color(red: 0.882, green: 0.188, blue: 0.424)
+
+        // Twitch badge — "Twitch Purple" #9146FF
+        static let twitchPurple = Color(red: 0.569, green: 0.275, blue: 1.0)
+
+        // Pill / overlay
         static let pillBackground = Color.black.opacity(0.7)
         static let pillBorder = Color.white.opacity(0.15)
-        static let recordingRed = accent
-        static let sacredGlow = Color(white: 0.90)
-        static let sacredStem = Color(white: 0.70)
-        static let meetingPillBackground = Color.black.opacity(0.90)
-        static let meetingPillBackgroundHover = Color(white: 0.18).opacity(0.95)
+        static let recordingRed = Color.red
+        static let sacredGlow = Color(
+            light: .init(red: 0.40, green: 0.85, blue: 0.40),
+            dark: .init(red: 0.46, green: 0.90, blue: 0.46))
+        static let sacredStem = Color(
+            light: .init(red: 0.35, green: 0.65, blue: 0.35),
+            dark: .init(red: 0.43, green: 0.74, blue: 0.43))
+        static let meetingPillBackground = Color(
+            light: .black.opacity(0.88),
+            dark: .black.opacity(0.90))
+        static let meetingPillBackgroundHover = Color(
+            light: .black.opacity(0.90),
+            dark: .init(red: 0.18, green: 0.18, blue: 0.19).opacity(0.95))
         static let meetingPillStroke = Color.white.opacity(0.08)
         static let meetingPillStrokeHover = Color.white.opacity(0.15)
         static let meetingPillText = Color.white.opacity(0.9)
         static let meetingPillBadgeBackground = Color.black.opacity(0.8)
+
+        // Sidebar
         static let contentBackground = Color(nsColor: .textBackgroundColor)
     }
 

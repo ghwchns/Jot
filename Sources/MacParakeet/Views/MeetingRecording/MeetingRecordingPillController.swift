@@ -4,7 +4,7 @@ import MacParakeetViewModels
 import SwiftUI
 
 /// Custom content view that forwards right-click for context menu.
-private class PillContentView: NSView {
+final class PillContentView: NSView {
     var onRightClick: ((NSEvent) -> Void)?
 
     override var isOpaque: Bool { false }
@@ -22,7 +22,7 @@ private class PillContentView: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        activePillRect.contains(point) ? super.hitTest(point) : nil
+        activePillRect.contains(convert(point, from: superview)) ? super.hitTest(point) : nil
     }
 
     override func rightMouseDown(with event: NSEvent) {
@@ -253,11 +253,11 @@ final class MeetingRecordingPillController {
         cancelItem.target = delegate
         cancelItem.attributedTitle = NSAttributedString(
             string: "Discard Recording",
-            attributes: [.foregroundColor: NSColor(white: 0.85, alpha: 1)]
+            attributes: [.foregroundColor: NSColor.systemRed]
         )
         if let cancelImage = NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: nil) {
             let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
-                .applying(.init(paletteColors: [.labelColor]))
+                .applying(.init(paletteColors: [.systemRed]))
             cancelItem.image = cancelImage.withSymbolConfiguration(config)
         }
         menu.addItem(cancelItem)
@@ -355,7 +355,7 @@ final class MeetingRecordingPillController {
     }
 }
 
-private final class MeetingRecordingAppKitPillView: NSView {
+final class MeetingRecordingAppKitPillView: NSView {
     private let viewModel: MeetingRecordingPillViewModel
     private let onTap: () -> Void
     private let iconView = MerkabaPillIconView()
@@ -491,6 +491,14 @@ private final class MeetingRecordingAppKitPillView: NSView {
         if window.frame.origin == origin { onTap() }
     }
 
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    // The glyph is decorative; this view owns the first click and drag even
+    // when the pointer lands directly on that child.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        bounds.contains(convert(point, from: superview)) ? self : nil
+    }
+
     private func setupLayers() {
         guard let layer else { return }
         layer.masksToBounds = false
@@ -525,7 +533,7 @@ private final class MeetingRecordingAppKitPillView: NSView {
         timeBadgeLayer.shadowOffset = CGSize(width: 0, height: -2)
         timeBadgeLayer.opacity = 0
 
-        timeDotLayer.fillColor = NSColor(white: 0.85, alpha: 1).cgColor
+        timeDotLayer.fillColor = NSColor.systemRed.cgColor
 
         timeTextLayer.font = badgeFont
         timeTextLayer.fontSize = badgeFont.pointSize
@@ -636,7 +644,7 @@ private final class MeetingRecordingAppKitPillView: NSView {
         // digits update crisply; the fade-in is driven separately by opacity.
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        timeDotLayer.fillColor = (isPaused ? NSColor(white: 0.55, alpha: 1) : NSColor(white: 0.85, alpha: 1)).cgColor
+        timeDotLayer.fillColor = (isPaused ? NSColor.systemOrange : NSColor.systemRed).cgColor
         if (timeTextLayer.string as? String) != text {
             timeTextLayer.string = text
         }

@@ -123,7 +123,7 @@ struct IdlePillView: View {
     private func shortcutText(_ value: String) -> some View {
         Text(value)
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(Color.white.opacity(0.8))
+            .foregroundStyle(Color(nsColor: NSColor(red: 0.85, green: 0.55, blue: 0.75, alpha: 1.0)))
     }
 }
 
