@@ -591,7 +591,7 @@ final class MicrophoneEngineRealPlatformTests: XCTestCase {
     /// and retains only signal counters, not microphone audio. Run with a known
     /// connected input UID in MACPARAKEET_SELECTED_BLUETOOTH_TEST_UID after
     /// coordinating access with other microphone users.
-    func testSelectedBluetoothCaptureSharesBuffersAndRetiresOnStop() async throws {
+    func testSelectedBluetoothCaptureStartsInSilenceSharesBuffersAndRetiresOnStop() async throws {
         guard let uid = ProcessInfo.processInfo.environment["MACPARAKEET_SELECTED_BLUETOOTH_TEST_UID"],
             let device = AudioDeviceManager.inputDevices().first(where: { $0.uid == uid })
         else { throw XCTSkip("Set MACPARAKEET_SELECTED_BLUETOOTH_TEST_UID to a connected microphone UID.") }
@@ -655,7 +655,8 @@ final class MicrophoneEngineRealPlatformTests: XCTestCase {
                 )
                 let observed = signal.withLock { $0 }
                 XCTAssertGreaterThan(observed.frames, 0)
-                XCTAssertGreaterThan(observed.nonzero, 0, "Exact-zero Bluetooth input must not pass readiness.")
+                // Quiet AirPods can emit exact-zero PCM. Valid silence must
+                // establish capture without requiring the user to speak first.
                 XCTAssertEqual(observed.invalid, 0)
                 XCTAssertEqual(platform.inputFormat?.sampleRate, observed.rate)
                 print("selected_bluetooth_hardware cycle=\(cycle) frames=\(observed.frames) nonzero=\(observed.nonzero) invalid=\(observed.invalid) sample_rate=\(observed.rate)")

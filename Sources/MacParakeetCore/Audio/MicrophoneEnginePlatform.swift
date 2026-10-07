@@ -1098,11 +1098,12 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
                     tapHandler: tapHandler,
                     startNow: startNow,
                     selectedRawDeviceID: vpioEnabled ? nil : attempt.explicitDeviceID,
-                    // Core Audio can temporarily hide the default device,
-                    // transport, or aggregate topology while a route settles.
-                    // Keep that uncertain window strict so zero-filled
-                    // Bluetooth PCM cannot be mistaken for a ready source.
-                    requiresNonZeroSignal: resolvedBluetoothState ?? true,
+                    // A direct raw capture identifies the actual microphone;
+                    // valid digital silence must start before the user speaks.
+                    // AVAudioEngine's implicit/VPIO routes keep their existing
+                    // nonzero protection for Bluetooth or uncertain topology.
+                    requiresNonZeroSignal: !vpioEnabled && attempt.explicitDeviceID != nil
+                        ? false : resolvedBluetoothState ?? true,
                     expectedDefaultInputGeneration: startNow && attempt.usesImplicitSystemDefault
                         ? pendingAttempt.defaultInputGeneration
                         : nil,

@@ -374,8 +374,10 @@ platform rebuilds the route snapshot and gives the refreshed implicit default
 one fresh-engine attempt before advancing to the built-in fallback (issue
 #1009). The retry stays implicit, follows a concurrent macOS default-input
 change, and is limited to one per engine configure attempt, including recovery.
-On Bluetooth or unresolved input topology, exact-zero PCM does not satisfy
-readiness; the next route can therefore recover issue #541 without imposing an
+Named raw capture accepts valid digital silence from the explicitly opened
+microphone, so capture starts and Stop is available before the user speaks.
+For AVAudioEngine routes on Bluetooth or unresolved input topology, exact-zero
+PCM does not satisfy readiness; the next route can therefore recover issue #541 without imposing an
 acoustic threshold on positively identified USB, built-in, or virtual inputs.
 For VPIO buffers, readiness inspects only microphone channel 0 so
 render/reference audio cannot hide a failed mic; raw multichannel input checks
@@ -416,7 +418,7 @@ fail-open policy and are counted separately as uninspected.
 Valid digital silence is not a source-lifecycle failure. After startup commits,
 it is forwarded on every transport, including Bluetooth and unresolved inputs,
 preserving the timeline and allowing speech to resume without engine teardown
-(issue #1032). The nonzero Bluetooth startup requirement above remains intact;
+(issue #1032). The AVAudioEngine nonzero Bluetooth startup requirement above remains intact;
 a first nonzero buffer alone does not relax it before the route commits.
 Callback stalls are route-agnostic because USB, aggregate, and virtual devices
 can fail at the same source-lifecycle seam.
