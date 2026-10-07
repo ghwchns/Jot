@@ -28,7 +28,9 @@ final class SelectedMicrophoneCapture: NSObject, AVCaptureAudioDataOutputSampleB
     private var observers: [NSObjectProtocol] = []
 
     let deviceUID: String
-    var inputFormat: AVAudioFormat? { state.withLock { $0.format } }
+    // AVAudioFormat is immutable, but its Sendable conformance requires macOS 26.
+    // Keep the reference protected by the same synchronous lock on older macOS.
+    var inputFormat: AVAudioFormat? { state.withLockUnchecked { $0.format } }
     var isRunning: Bool { session.isRunning }
 
     init(
@@ -62,7 +64,9 @@ final class SelectedMicrophoneCapture: NSObject, AVCaptureAudioDataOutputSampleB
         }
         session.addOutput(output)
         output.setSampleBufferDelegate(self, queue: sampleQueue)
-        state.withLock { $0.format = AVAudioFormat(cmAudioFormatDescription: device.activeFormat.formatDescription) }
+        state.withLockUnchecked {
+            $0.format = AVAudioFormat(cmAudioFormatDescription: device.activeFormat.formatDescription)
+        }
         for name in [AVCaptureSession.runtimeErrorNotification, AVCaptureSession.wasInterruptedNotification] {
             observers.append(
                 NotificationCenter.default.addObserver(forName: name, object: session, queue: nil) {
@@ -107,7 +111,7 @@ final class SelectedMicrophoneCapture: NSObject, AVCaptureAudioDataOutputSampleB
         guard state.withLock({ $0.acceptingBuffers && !$0.failed }) else { return }
         do {
             let buffer = try convert.makePCMBuffer(from: sampleBuffer)
-            state.withLock { $0.format = buffer.format }
+            state.withLockUnchecked { $0.format = buffer.format }
             let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
             let hostTimestamp =
                 session.synchronizationClock.map {
