@@ -1281,7 +1281,7 @@ final class MicrophoneEnginePlatformConfigChangeRecoveryTests: XCTestCase {
                     initialTapHandler.withLock { $0 = tapHandler }
                     tapHandler(signalBuffer.buffer, AVAudioTime(hostTime: 1))
                 case (2, 10):
-                    tapHandler(zeroBuffer.buffer, AVAudioTime(hostTime: 2))
+                    tapHandler(emptyBuffer.buffer, AVAudioTime(hostTime: 2))
                 case (3, 20):
                     tapHandler(zeroBuffer.buffer, AVAudioTime(hostTime: 3))
                 default:
@@ -1311,7 +1311,7 @@ final class MicrophoneEnginePlatformConfigChangeRecoveryTests: XCTestCase {
         XCTAssertEqual(
             deliveredBufferCount.withLock { $0 },
             2,
-            "Empty callbacks and Bluetooth startup silence must not reach consumers"
+            "Empty callbacks must not reach consumers; valid fallback silence must establish readiness"
         )
         XCTAssertEqual(
             platform.lastSucceededAttempt,

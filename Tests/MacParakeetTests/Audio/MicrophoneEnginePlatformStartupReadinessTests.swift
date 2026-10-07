@@ -378,6 +378,36 @@ final class MicrophoneEnginePlatformStartupReadinessTests: XCTestCase {
         )
     }
 
+    func testNamedBluetoothRawCaptureStartsStopsAndRestartsBeforeSpeech() async throws {
+        let starts = OSAllocatedUnfairLock(initialState: 0)
+        let delivered = OSAllocatedUnfairLock(initialState: 0)
+        let silence = UncheckedSendableAudioPCMBuffer(makeStartupReadinessBuffer())
+        let selected = MeetingInputDeviceAttempt(source: .selected(uid: "bluetooth"), deviceID: 10)
+        let platform = AVAudioEngineMicrophonePlatform(
+            deviceAttemptsBuilder: { [selected, .implicitSystemDefault(resolvedDeviceID: 20)] },
+            inputDeviceSetter: { _, _ in true },
+            startupReadinessTimeout: 0,
+            bluetoothInputState: { _ in true },
+            engineStarter: { _, _, _, handler in
+                starts.withLock { $0 += 1 }
+                handler(silence.buffer, AVAudioTime(hostTime: 1))
+            }
+        )
+        let stream = SharedMicrophoneStream(platform: platform, bufferSize: 256)
+        for cycle in 0..<2 {
+            let token = try await stream.subscribe(wantsVPIO: false) { _, _ in
+                delivered.withLock { $0 += 1 }
+            }
+            XCTAssertTrue(stream.diagnostics.engineRunning)
+            XCTAssertEqual(platform.lastSucceededAttempt, selected, "Silence must not force an implicit fallback.")
+            XCTAssertEqual(starts.withLock { $0 }, cycle + 1)
+            XCTAssertEqual(delivered.withLock { $0 }, cycle + 1, "Valid silence must reach the active consumer.")
+            await stream.unsubscribe(token)
+            XCTAssertFalse(platform.isEngineRunning, "Stop before speech must settle.")
+            XCTAssertEqual(stream.diagnostics.subscriberCount, 0)
+        }
+    }
+
     func testNonBluetoothZeroFilledBufferCountsAsReady() throws {
         let invocationCount = OSAllocatedUnfairLock(initialState: 0)
         let zeroBuffer = UncheckedSendableAudioPCMBuffer(makeStartupReadinessBuffer())

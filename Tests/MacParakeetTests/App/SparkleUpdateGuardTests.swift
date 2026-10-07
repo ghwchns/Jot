@@ -39,6 +39,17 @@ final class SparkleUpdateGuardTests: XCTestCase {
 
     // MARK: - blockReason
 
+    func testPersonalReleaseBlocksUpstreamUpdatesRegardlessOfMeetingState() {
+        for recording in [false, true] {
+            XCTAssertEqual(
+                SparkleUpdateGuard.blockReason(
+                    appVersion: "0.8.9", isMeetingRecordingActive: recording, isPersonalBuild: true
+                ),
+                .personalBuild
+            )
+        }
+    }
+
     func testBlockReasonBlocksDevBuildBeforeMeetingState() {
         XCTAssertEqual(
             SparkleUpdateGuard.blockReason(appVersion: "0.0.0", isMeetingRecordingActive: true),

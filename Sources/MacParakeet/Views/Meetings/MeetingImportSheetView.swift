@@ -163,7 +163,7 @@ struct MeetingImportSheetView: View {
     private var ownershipNotice: some View {
         Label {
             Text(
-                "MacParakeet makes its own audio copy. Your original stays where it is and won’t be changed. The new copy follows your meeting-audio retention setting today."
+                "Jot makes its own audio copy. Your original stays where it is and won’t be changed. The new copy follows your meeting-audio retention setting today."
             )
         } icon: {
             Image(systemName: "info.circle")

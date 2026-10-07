@@ -222,7 +222,7 @@ struct VocabularyBackupSection: View {
                         lineWidth: 0.5
                     )
             )
-            .foregroundStyle(isPrimary ? Color.white : Color.primary)
+            .foregroundStyle(isPrimary ? DesignSystem.Colors.onAccent : Color.primary)
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
@@ -270,7 +270,7 @@ struct VocabularyBackupSection: View {
     private func presentImportPanel() {
         let panel = NSOpenPanel()
         panel.title = "Import Vocabulary"
-        panel.message = "Choose a MacParakeet vocabulary backup (.json)."
+        panel.message = "Choose a Jot vocabulary backup (.json)."
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         if let json = UTType(filenameExtension: "json") {

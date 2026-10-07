@@ -168,7 +168,7 @@ public enum SettingsSearchIndex {
             subtitle: "in Dictation",
             keywords: [
                 "overlay", "overlay position", "placement", "location", "move pill",
-                "top of screen", "bottom of screen",
+                "top of screen", "bottom of screen", "drag pill", "reset pill positions",
             ],
             cardAnchor: "dictation"
         ),
@@ -583,18 +583,10 @@ public enum SettingsSearchIndex {
             cardAnchor: "system.appearance"
         ),
         SettingsSearchEntry(
-            id: "system.appearance.discover",
-            tab: .system,
-            title: "Show Discover in the sidebar",
-            subtitle: "in Appearance",
-            keywords: ["discover", "sidebar", "hide discover", "feed"],
-            cardAnchor: "system.appearance"
-        ),
-        SettingsSearchEntry(
             id: "system.startup",
             tab: .system,
             title: "Startup",
-            subtitle: "How MacParakeet starts and where it appears on your Mac.",
+            subtitle: "How Jot starts and where it appears on your Mac.",
             keywords: [
                 "launch at login", "login items", "menu bar", "menu bar icon", "hide menu bar icon",
                 "status icon", "menu bar only", "startup", "boot", "auto launch",
@@ -650,8 +642,8 @@ public enum SettingsSearchIndex {
             id: "system.updates",
             tab: .system,
             title: "Updates",
-            subtitle: "Automatic update checks and manual update.",
-            keywords: ["update", "sparkle", "version", "release", "auto update"],
+            subtitle: "Jot is updated manually after upstream review.",
+            keywords: ["update", "version", "release", "manual update", "upstream"],
             cardAnchor: "system.updates"
         ),
         SettingsSearchEntry(

@@ -35,6 +35,15 @@ owned by `AppEnvironment`.
   Removing route observers retires their generation, pending coalesced delivery,
   and queued recovery; a replacement listener starts a fresh burst.
 
+- `SelectedMicrophoneCapture.swift` — raw capture for an explicitly selected
+  microphone (including the built-in fallback), using `AVCaptureDeviceInput`.
+  This opens the named device directly without creating AVAudioEngine's
+  system-default aggregate. Preparation leaves the capture session stopped;
+  start, first-buffer readiness, fan-out, fallback, liveness recovery, and
+  teardown remain owned by the existing microphone platform. Buffers arrive
+  on a serial AVFoundation delegate queue and use the session clock converted
+  to host time. System Default and experimental VPIO retain AVAudioEngine.
+
 **Mic consumers (each subscribes to the shared stream)**
 - `AudioRecorder.swift` — dictation capture.
   `subscribe(wantsVPIO: false)`. Writes 16 kHz mono Float32 WAVs to
@@ -60,7 +69,10 @@ owned by `AppEnvironment`.
   with `wantsVPIO: false` by default via `MeetingMicProcessingMode.raw`.
   VPIO modes remain available for explicit experiments, with raw fallback
   when `.vpioPreferred` cannot engage. Has its own silent-buffer watchdog
-  with a stall observer wired up to the meeting flow. Stop is an ordered async
+  with a stall observer wired up to the meeting flow. First-buffer diagnostics
+  use the delivered buffer's format without synchronizing back to the source
+  lifecycle queue, so stop can drain callbacks without a queue cycle.
+  Stop is an ordered async
   boundary: it retires callbacks and awaits shared-stream unsubscription before
   the same microphone capture object may be reused. The meeting service can
   settle independently while retaining ownership of that pending cleanup.
@@ -297,8 +309,7 @@ re-*prepare* the raw dictation engine whenever it goes idle
 (`SharedMicrophoneStream(autoPrewarmWhenIdle:)`, plus a one-shot
 `prewarmDictation()` at launch). Prepare pays the expensive cold-path
 work up front — apply an explicit named-device selection when requested,
-negotiate the output format, install the tap, and call
-`AVAudioEngine.prepare()` — but leaves the engine **stopped**,
+negotiate the output format and prepare the capture backend — but leaves it **stopped**,
 so there is no capture and no mic indicator while idle. The next
 dictation press matches the prepared engine
 (`AVAudioEngineMicrophonePlatform.prepare`/`goPreparedLocked`) and pays
@@ -316,7 +327,10 @@ key-down without holding the mic open.
 
 Idle preparation preserves the active routing contract below: a named
 microphone stays explicitly pinned, while System Default stays implicit.
-Preparation validates the resolved leading input for Bluetooth safety but
+Named raw capture opens its `AVCaptureDeviceInput` directly; it never creates
+the default input node, including during stop. This keeps Bluetooth playback
+in stereo when the system default microphone is Bluetooth but the selected
+microphone is built-in or USB. Preparation validates the resolved leading input for Bluetooth safety but
 does not convert System Default into a `CurrentDevice` write. A default-input
 change invalidates and trailing-debounces a new preparation.
 
@@ -360,8 +374,10 @@ platform rebuilds the route snapshot and gives the refreshed implicit default
 one fresh-engine attempt before advancing to the built-in fallback (issue
 #1009). The retry stays implicit, follows a concurrent macOS default-input
 change, and is limited to one per engine configure attempt, including recovery.
-On Bluetooth or unresolved input topology, exact-zero PCM does not satisfy
-readiness; the next route can therefore recover issue #541 without imposing an
+Named raw capture accepts valid digital silence from the explicitly opened
+microphone, so capture starts and Stop is available before the user speaks.
+For AVAudioEngine routes on Bluetooth or unresolved input topology, exact-zero
+PCM does not satisfy readiness; the next route can therefore recover issue #541 without imposing an
 acoustic threshold on positively identified USB, built-in, or virtual inputs.
 For VPIO buffers, readiness inspects only microphone channel 0 so
 render/reference audio cannot hide a failed mic; raw multichannel input checks
@@ -402,7 +418,7 @@ fail-open policy and are counted separately as uninspected.
 Valid digital silence is not a source-lifecycle failure. After startup commits,
 it is forwarded on every transport, including Bluetooth and unresolved inputs,
 preserving the timeline and allowing speech to resume without engine teardown
-(issue #1032). The nonzero Bluetooth startup requirement above remains intact;
+(issue #1032). The AVAudioEngine nonzero Bluetooth startup requirement above remains intact;
 a first nonzero buffer alone does not relax it before the route commits.
 Callback stalls are route-agnostic because USB, aggregate, and virtual devices
 can fail at the same source-lifecycle seam.

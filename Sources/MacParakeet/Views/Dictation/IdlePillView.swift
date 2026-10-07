@@ -43,7 +43,8 @@ struct IdlePillView: View {
                 .fill(viewModel.isHovered ? DesignSystem.Colors.pillBackground : Color(white: 0.25, opacity: 0.9))
                 .overlay(
                     Capsule()
-                        .strokeBorder(DesignSystem.Colors.pillBorder.opacity(viewModel.isHovered ? 0.67 : 0.4), lineWidth: 0.5)
+                        .strokeBorder(
+                            DesignSystem.Colors.pillBorder.opacity(viewModel.isHovered ? 0.67 : 0.4), lineWidth: 0.5)
                 )
         }
         .frame(
@@ -128,16 +129,18 @@ struct IdlePillView: View {
 
 #Preview {
     VStack(spacing: 40) {
-        IdlePillView(viewModel: {
-            let vm = IdlePillViewModel()
-            return vm
-        }())
+        IdlePillView(
+            viewModel: {
+                let vm = IdlePillViewModel()
+                return vm
+            }())
 
-        IdlePillView(viewModel: {
-            let vm = IdlePillViewModel()
-            vm.isHovered = true
-            return vm
-        }())
+        IdlePillView(
+            viewModel: {
+                let vm = IdlePillViewModel()
+                vm.isHovered = true
+                return vm
+            }())
     }
     .padding(30)
     .frame(width: 400, height: 200)

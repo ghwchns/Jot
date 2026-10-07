@@ -164,7 +164,8 @@ final class SettingsViewModelTests: XCTestCase {
             testDefaults.stringArray(forKey: UserDefaultsAppRuntimePreferences.voiceReturnTriggersKey),
             ["zatwierdź"]
         )
-        XCTAssertEqual(testDefaults.string(forKey: UserDefaultsAppRuntimePreferences.voiceReturnTriggerKey), "zatwierdź")
+        XCTAssertEqual(
+            testDefaults.string(forKey: UserDefaultsAppRuntimePreferences.voiceReturnTriggerKey), "zatwierdź")
 
         viewModel.deleteVoiceReturnTrigger(at: 0)
 
@@ -232,7 +233,8 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.saveTranscriptionAudio, "saveTranscriptionAudio should default to true")
         XCTAssertEqual(viewModel.meetingAudioRetention, .keepForever)
         XCTAssertTrue(viewModel.saveMeetingAudio, "saveMeetingAudio should default to true")
-        XCTAssertEqual(viewModel.youtubeAudioQuality, .m4a, "youtubeAudioQuality should default to Apple-friendly saved audio")
+        XCTAssertEqual(
+            viewModel.youtubeAudioQuality, .m4a, "youtubeAudioQuality should default to Apple-friendly saved audio")
         XCTAssertTrue(viewModel.speakerDiarization, "speakerDiarization should default to true")
         XCTAssertTrue(viewModel.meetingSpeakerDiarization, "meetingSpeakerDiarization should default to true")
         XCTAssertTrue(
@@ -649,18 +651,21 @@ final class SettingsViewModelTests: XCTestCase {
         viewModel.meetingAudioSourceMode = .systemOnly
 
         let props = settingChangedProps(in: telemetry.snapshot())
-        XCTAssertTrue(props.contains {
-            $0["setting"] == TelemetrySettingName.meetingAutoStop.rawValue
-                && $0["value"] == "true"
-        })
-        XCTAssertTrue(props.contains {
-            $0["setting"] == TelemetrySettingName.appAppearance.rawValue
-                && $0["value"] == AppAppearanceMode.dark.rawValue
-        })
-        XCTAssertTrue(props.contains {
-            $0["setting"] == TelemetrySettingName.meetingAudioSourceMode.rawValue
-                && $0["value"] == MeetingAudioSourceMode.systemOnly.rawValue
-        })
+        XCTAssertTrue(
+            props.contains {
+                $0["setting"] == TelemetrySettingName.meetingAutoStop.rawValue
+                    && $0["value"] == "true"
+            })
+        XCTAssertTrue(
+            props.contains {
+                $0["setting"] == TelemetrySettingName.appAppearance.rawValue
+                    && $0["value"] == AppAppearanceMode.dark.rawValue
+            })
+        XCTAssertTrue(
+            props.contains {
+                $0["setting"] == TelemetrySettingName.meetingAudioSourceMode.rawValue
+                    && $0["value"] == MeetingAudioSourceMode.systemOnly.rawValue
+            })
     }
 
     func testSettingChangedTelemetryOmitsValueForOpenOrUserAuthoredSettings() {
@@ -766,7 +771,7 @@ final class SettingsViewModelTests: XCTestCase {
                         uid: "builtin-zed",
                         name: "Zed Built-In Mic",
                         transportType: kAudioDeviceTransportTypeBuiltIn
-                    )
+                    ),
                 ]
             },
             defaultInputDeviceUIDProvider: { "builtin-zed" }
@@ -801,7 +806,7 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertEqual(vm.microphoneDeviceOptions.last?.displayName, "Selected microphone (unavailable)")
         XCTAssertEqual(
             vm.selectedMicrophoneStatusText,
-            "Selected microphone is unavailable. MacParakeet will use System Default until it returns."
+            "Selected microphone is unavailable. Jot will use System Default until it returns."
         )
     }
 
@@ -1225,7 +1230,8 @@ final class SettingsViewModelTests: XCTestCase {
             MeetingAudioRetentionMode.deleteAfterDays.rawValue
         )
         XCTAssertEqual(
-            testDefaults.object(forKey: UserDefaultsAppRuntimePreferences.meetingAudioRetentionDeleteAfterDaysKey) as? Int,
+            testDefaults.object(forKey: UserDefaultsAppRuntimePreferences.meetingAudioRetentionDeleteAfterDaysKey)
+                as? Int,
             14
         )
         XCTAssertTrue(testDefaults.bool(forKey: UserDefaultsAppRuntimePreferences.saveMeetingAudioKey))
@@ -1433,7 +1439,7 @@ final class SettingsViewModelTests: XCTestCase {
     }
 
     func testFileTranscriptionHotkeyPersistsToDedicatedDefaultsKey() {
-        let trigger = HotkeyTrigger.chord(modifiers: ["control", "shift"], keyCode: 3) // F
+        let trigger = HotkeyTrigger.chord(modifiers: ["control", "shift"], keyCode: 3)  // F
         viewModel.fileTranscriptionHotkeyTrigger = trigger
 
         XCTAssertEqual(
@@ -1447,7 +1453,7 @@ final class SettingsViewModelTests: XCTestCase {
     }
 
     func testYouTubeTranscriptionHotkeyPersistsToDedicatedDefaultsKey() {
-        let trigger = HotkeyTrigger.chord(modifiers: ["control", "shift"], keyCode: 16) // Y
+        let trigger = HotkeyTrigger.chord(modifiers: ["control", "shift"], keyCode: 16)  // Y
         viewModel.youtubeTranscriptionHotkeyTrigger = trigger
 
         XCTAssertEqual(
@@ -1503,14 +1509,16 @@ final class SettingsViewModelTests: XCTestCase {
             ].contains(setting)
         }
 
-        XCTAssertEqual(hotkeyEvents, [
-            "dictation:modifier",
-            "push_to_talk:modifier",
-            "meeting:chord",
-            "file_transcription:disabled",
-            "youtube_transcription:key_code",
-            "dictation_ai_polish:chord",
-        ])
+        XCTAssertEqual(
+            hotkeyEvents,
+            [
+                "dictation:modifier",
+                "push_to_talk:modifier",
+                "meeting:chord",
+                "file_transcription:disabled",
+                "youtube_transcription:key_code",
+                "dictation_ai_polish:chord",
+            ])
         XCTAssertTrue(hotkeySettingEvents.isEmpty)
     }
 
@@ -1544,7 +1552,8 @@ final class SettingsViewModelTests: XCTestCase {
     }
 
     func testShowIdlePillPostsNotificationOnChange() {
-        let expectation = expectation(forNotification: Notification.Name("macparakeet.showIdlePillDidChange"), object: nil)
+        let expectation = expectation(
+            forNotification: Notification.Name("macparakeet.showIdlePillDidChange"), object: nil)
         viewModel.showIdlePill = false
         wait(for: [expectation], timeout: 1.0)
     }
@@ -1564,7 +1573,8 @@ final class SettingsViewModelTests: XCTestCase {
     }
 
     func testShowDiscoverPostsNotificationOnChange() {
-        let expectation = expectation(forNotification: Notification.Name("macparakeet.showDiscoverDidChange"), object: nil)
+        let expectation = expectation(
+            forNotification: Notification.Name("macparakeet.showDiscoverDidChange"), object: nil)
         viewModel.showDiscover = false
         wait(for: [expectation], timeout: 1.0)
     }
@@ -1645,8 +1655,9 @@ final class SettingsViewModelTests: XCTestCase {
         try await waitUntil { self.mockPermissions.checkAccessibilityPermissionCallCount >= 3 }
         XCTAssertFalse(vm.accessibilityGranted)
         XCTAssertEqual(recoveryCount, 0)
-        XCTAssertEqual(mockPermissions.checkScreenRecordingPermissionCallCount, 1,
-                       "Accessibility watch must not poll the other permissions")
+        XCTAssertEqual(
+            mockPermissions.checkScreenRecordingPermissionCallCount, 1,
+            "Accessibility watch must not poll the other permissions")
 
         mockPermissions.accessibilityPermission = true
         try await waitUntil { recoveryCount == 1 }
@@ -1656,8 +1667,9 @@ final class SettingsViewModelTests: XCTestCase {
         let checksAfterGrant = mockPermissions.checkAccessibilityPermissionCallCount
         try await Task.sleep(for: .milliseconds(120))
         XCTAssertEqual(recoveryCount, 1, "Recovery must fire once per grant")
-        XCTAssertEqual(mockPermissions.checkAccessibilityPermissionCallCount, checksAfterGrant,
-                       "Watch must stop once access is granted")
+        XCTAssertEqual(
+            mockPermissions.checkAccessibilityPermissionCallCount, checksAfterGrant,
+            "Watch must stop once access is granted")
         XCTAssertEqual(mockPermissions.checkScreenRecordingPermissionCallCount, 1)
         vm.onAccessibilityGranted = nil
     }
@@ -1676,8 +1688,9 @@ final class SettingsViewModelTests: XCTestCase {
 
         let checksAfterRelease = mockPermissions.checkAccessibilityPermissionCallCount
         try await Task.sleep(for: .milliseconds(120))
-        XCTAssertEqual(mockPermissions.checkAccessibilityPermissionCallCount, checksAfterRelease,
-                       "Watch must stop polling once the view model is released")
+        XCTAssertEqual(
+            mockPermissions.checkAccessibilityPermissionCallCount, checksAfterRelease,
+            "Watch must stop polling once the view model is released")
     }
 
     func testAccessibilityWatchStopsWhenSharedRefreshObservesGrant() async throws {
@@ -1695,8 +1708,9 @@ final class SettingsViewModelTests: XCTestCase {
         let checksAfterGrant = mockPermissions.checkAccessibilityPermissionCallCount
         try await Task.sleep(for: .milliseconds(120))
         XCTAssertEqual(recoveryCount, 1)
-        XCTAssertEqual(mockPermissions.checkAccessibilityPermissionCallCount, checksAfterGrant,
-                       "Shared refresh observing the grant must cancel the watch")
+        XCTAssertEqual(
+            mockPermissions.checkAccessibilityPermissionCallCount, checksAfterGrant,
+            "Shared refresh observing the grant must cancel the watch")
         vm.onAccessibilityGranted = nil
     }
 
@@ -1708,8 +1722,9 @@ final class SettingsViewModelTests: XCTestCase {
         try await waitUntil { recoveryCount == 1 }
         let checksWhileGranted = mockPermissions.checkAccessibilityPermissionCallCount
         try await Task.sleep(for: .milliseconds(100))
-        XCTAssertEqual(mockPermissions.checkAccessibilityPermissionCallCount, checksWhileGranted,
-                       "No Accessibility watch runs while access is granted")
+        XCTAssertEqual(
+            mockPermissions.checkAccessibilityPermissionCallCount, checksWhileGranted,
+            "No Accessibility watch runs while access is granted")
 
         mockPermissions.accessibilityPermission = false
         vm.refreshPermissions()
@@ -1883,7 +1898,7 @@ final class SettingsViewModelTests: XCTestCase {
 
     func testClearAllDictationsRefreshesStats() {
         mockRepo.dictations = [
-            Dictation(durationMs: 1000, rawTranscript: "Test"),
+            Dictation(durationMs: 1000, rawTranscript: "Test")
         ]
 
         viewModel.configure(
@@ -1975,7 +1990,7 @@ final class SettingsViewModelTests: XCTestCase {
 
     func testResetLifetimeStatsCallsRepo() {
         mockRepo.dictations = [
-            Dictation(durationMs: 1000, rawTranscript: "One"),
+            Dictation(durationMs: 1000, rawTranscript: "One")
         ]
 
         viewModel.configure(
@@ -2111,7 +2126,8 @@ final class SettingsViewModelTests: XCTestCase {
         let sourceFile = folder.appendingPathComponent("source-capture.wav")
         let notes = folder.appendingPathComponent("notes.md")
         XCTAssertTrue(FileManager.default.createFile(atPath: file.path, contents: Data(repeating: 0x4, count: 1024)))
-        XCTAssertTrue(FileManager.default.createFile(atPath: sourceFile.path, contents: Data(repeating: 0x4, count: 1024)))
+        XCTAssertTrue(
+            FileManager.default.createFile(atPath: sourceFile.path, contents: Data(repeating: 0x4, count: 1024)))
         try Data("notes".utf8).write(to: notes)
 
         let meeting = Transcription(
@@ -2156,7 +2172,8 @@ final class SettingsViewModelTests: XCTestCase {
         let fetchedMeeting = try XCTUnwrap(mockTranscriptionRepo.transcriptions.first(where: { $0.id == meeting.id }))
         XCTAssertNil(fetchedMeeting.filePath)
         XCTAssertEqual(fetchedMeeting.meetingArtifactFolderPath, folder.standardizedFileURL.path)
-        XCTAssertEqual(mockTranscriptionRepo.transcriptions.first(where: { $0.id == local.id })?.filePath, local.filePath)
+        XCTAssertEqual(
+            mockTranscriptionRepo.transcriptions.first(where: { $0.id == local.id })?.filePath, local.filePath)
         XCTAssertEqual(
             mockTranscriptionRepo.transcriptions.first(where: { $0.id == externalMeeting.id })?.filePath,
             externalMeeting.filePath
@@ -2352,7 +2369,9 @@ final class SettingsViewModelTests: XCTestCase {
         let capturedChecks = recorder.calls
         XCTAssertEqual(capturedChecks.first?.0, .multilingual1120)
         XCTAssertEqual(capturedChecks.first?.1, "en-US")
-        XCTAssertEqual(vm.engine.nemotronModelStatusDetail, "Nemotron 3.5 ASR Streaming 0.6B · Installed locally, loads when selected.")
+        XCTAssertEqual(
+            vm.engine.nemotronModelStatusDetail,
+            "Nemotron 3.5 ASR Streaming 0.6B · Installed locally, loads when selected.")
     }
 
     func testRepairParakeetModelUsesRetryAndEndsReady() async throws {
@@ -2909,9 +2928,8 @@ final class SettingsViewModelTests: XCTestCase {
     ) async throws {
         let target = vm ?? viewModel!
         try await waitUntil(timeout: timeout, file: file, line: line) {
-            target.engine.parakeetStatus != .checking &&
-                target.engine.whisperModelStatus != .checking &&
-                target.engine.nemotronModelStatus != .checking
+            target.engine.parakeetStatus != .checking && target.engine.whisperModelStatus != .checking
+                && target.engine.nemotronModelStatus != .checking
         }
     }
 
@@ -2928,17 +2946,19 @@ final class SettingsViewModelTests: XCTestCase {
         in events: [TelemetryEventSpec]
     ) -> [SpeechEngineSwitchEventSnapshot] {
         events.compactMap { event in
-            guard case .speechEngineSwitchOperation(
-                operationID: _,
-                operationContext: _,
-                fromEngine: let fromEngine,
-                toEngine: let toEngine,
-                outcome: let outcome,
-                durationSeconds: _,
-                blockedReason: let blockedReason,
-                errorType: let errorType,
-                wasCold: let wasCold
-            ) = event else {
+            guard
+                case .speechEngineSwitchOperation(
+                    operationID: _,
+                    operationContext: _,
+                    fromEngine: let fromEngine,
+                    toEngine: let toEngine,
+                    outcome: let outcome,
+                    durationSeconds: _,
+                    blockedReason: let blockedReason,
+                    errorType: let errorType,
+                    wasCold: let wasCold
+                ) = event
+            else {
                 return nil
             }
             return SpeechEngineSwitchEventSnapshot(
@@ -3450,9 +3470,15 @@ final class SettingsViewModelTests: XCTestCase {
         return SettingsViewModel(
             defaults: testDefaults,
             parakeetModelVariantCached: { _ in true },
-            deleteParakeetModelOnDisk: { variant in recorder.recordParakeet(variant); return true },
-            deleteNemotronModelOnDisk: { variant, language in recorder.recordNemotron(variant, language); return true },
-            deleteWhisperModelOnDisk: { variant in recorder.recordWhisper(variant); return true }
+            deleteParakeetModelOnDisk: { variant in
+                recorder.recordParakeet(variant); return true
+            },
+            deleteNemotronModelOnDisk: { variant, language in
+                recorder.recordNemotron(variant, language); return true
+            },
+            deleteWhisperModelOnDisk: { variant in
+                recorder.recordWhisper(variant); return true
+            }
         )
     }
 

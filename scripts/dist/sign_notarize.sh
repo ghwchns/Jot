@@ -29,7 +29,7 @@ set -euo pipefail
 #   dist/MacParakeet.dmg (signed + stapled) if CREATE_DMG=1
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APP_NAME="${APP_NAME:-MacParakeet}"
+APP_NAME="${APP_NAME:-Jot}"
 DIST_DIR="${DIST_DIR:-$ROOT_DIR/dist}"
 APP_PATH="$DIST_DIR/${APP_NAME}.app"
 

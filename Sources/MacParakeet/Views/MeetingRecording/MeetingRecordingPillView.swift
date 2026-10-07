@@ -241,7 +241,7 @@ struct MeetingRecordingPillView: View {
                         Circle()
                             .fill(DesignSystem.Colors.recordingRed)
                             .frame(width: 5, height: 5)
-                            .shadow(color: .red.opacity(0.5), radius: 3)
+                            .shadow(color: DesignSystem.Colors.recordingRed.opacity(0.5), radius: 3)
                     }
 
                     Text(viewModel.formattedElapsed)

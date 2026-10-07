@@ -8,7 +8,7 @@ import MacParakeetViewModels
 /// NSView overlay that detects mouse hover and clicks for the idle pill.
 /// Uses mouseMoved to precisely track whether the cursor is over the pill region,
 /// not the entire panel. The hover rect changes based on expanded state.
-private final class IdlePillTrackingView: NSView {
+final class IdlePillTrackingView: FloatingPillInteractionView {
     var onEnter: (() -> Void)?
     var onExit: (() -> Void)?
     var onClicked: (() -> Void)?
@@ -24,11 +24,12 @@ private final class IdlePillTrackingView: NSView {
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         trackingAreas.forEach { removeTrackingArea($0) }
-        addTrackingArea(NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
-            owner: self
-        ))
+        addTrackingArea(
+            NSTrackingArea(
+                rect: bounds,
+                options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
+                owner: self
+            ))
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -66,15 +67,21 @@ private final class IdlePillTrackingView: NSView {
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         let activeRect = isExpanded ? expandedPillRect : collapsedPillRect
-        if activeRect.contains(point) {
-            onClicked?()
-        }
+        guard activeRect.contains(point) else { return }
+        super.mouseDown(with: event)
+    }
+
+    override func pillClicked(at point: CGPoint) {
+        let activeRect = isExpanded ? expandedPillRect : collapsedPillRect
+        if activeRect.contains(point) { onClicked?() }
     }
 
     // Only intercept clicks in the visible pill region; pass through everywhere else.
     override func hitTest(_ point: NSPoint) -> NSView? {
         let activeRect = isExpanded ? expandedPillRect : collapsedPillRect
-        return activeRect.contains(point) ? self : nil
+        // AppKit passes a point in the superview's coordinates. The hosting
+        // view is flipped, while this tracker uses native bottom-up coordinates.
+        return activeRect.contains(convert(point, from: superview)) ? self : nil
     }
 }
 
@@ -84,7 +91,7 @@ private final class IdlePillTrackingView: NSView {
 /// Non-activating NSPanel that never steals focus.
 @MainActor
 final class IdlePillController {
-    private var panel: NSPanel?
+    private var panel: FloatingPillPanel?
     private var hostingView: NSHostingView<IdlePillView>?
     private var trackingView: IdlePillTrackingView?
 
@@ -107,12 +114,7 @@ final class IdlePillController {
         let panelHeight: CGFloat = 90
         hosting.frame = NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight)
 
-        let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
-            styleMask: [.nonactivatingPanel, .borderless],
-            backing: .buffered,
-            defer: false
-        )
+        let panel = FloatingPillPanel(role: .dictation, size: CGSize(width: panelWidth, height: panelHeight))
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
@@ -161,7 +163,7 @@ final class IdlePillController {
         trackingView.collapsedPillRect = edgeRect(width: 60, height: 24)
         trackingView.expandedPillRect = edgeRect(width: 320, height: 80)
 
-        panel.moveToDictationOverlayPosition(placement: placement)
+        panel.restorePillPosition()
     }
 
     func hide() {

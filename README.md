@@ -1,3 +1,9 @@
+# Jot personal fork
+
+Local dictation and microphone/system-audio meeting transcripts, based on
+MacParakeet. See [Using Jot](docs/jot.md) for F5, AirPods, movable pills, local
+export, and manual update notes. Upstream documentation and credits follow.
+
 <p align="center">
   <img src="Assets/AppIcon-1024x1024.png" width="128" height="128" alt="MacParakeet app icon">
 </p>

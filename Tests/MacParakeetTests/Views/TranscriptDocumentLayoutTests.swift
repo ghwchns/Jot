@@ -19,6 +19,13 @@ final class TranscriptDocumentLayoutTests: XCTestCase {
         }
     }
 
+    /// The offscreen fixture supplies a virtual pane independent of display size.
+    private final class OffscreenResizeWindow: NSWindow {
+        override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+            frameRect
+        }
+    }
+
     func testLongMarkdownAndWideBlocksStayInsideCompactAndRegularPanes() async throws {
         let paragraph = String(repeating: "Review the next milestone and confirm the owner. ", count: 12)
         let chapters = (0..<80).map { "## Chapter \($0 + 1)\n\n\(paragraph)\n\n- [ ] Confirm the next action\n" }
@@ -74,7 +81,7 @@ final class TranscriptDocumentLayoutTests: XCTestCase {
                 chatViewModel: TranscriptChatViewModel(), promptResultsViewModel: results,
                 promptsViewModel: PromptsViewModel()
             ).defaultAppStorage(defaults))
-        let window = NSWindow(
+        let window = OffscreenResizeWindow(
             contentRect: NSRect(x: -20_000, y: -20_000, width: 1_100, height: 650),
             styleMask: [.titled, .resizable], backing: .buffered, defer: false
         )
@@ -91,11 +98,15 @@ final class TranscriptDocumentLayoutTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.2))
         let editor = try XCTUnwrap(descendants(host).compactMap { $0 as? NSTextView }.first(where: \.isEditable))
         let smallHeight = try XCTUnwrap(editor.enclosingScrollView).contentView.bounds.height
+        let smallPaneHeight = host.bounds.height
         window.setContentSize(NSSize(width: 1_100, height: 950))
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date().addingTimeInterval(0.2))
         let largeHeight = try XCTUnwrap(editor.enclosingScrollView).contentView.bounds.height
-        print("Result editor viewport: \(smallHeight) -> \(largeHeight) for +300 pt window height")
+        print(
+            "Result editor viewport: \(smallHeight) -> \(largeHeight); actual pane: \(smallPaneHeight) -> \(host.bounds.height)"
+        )
+        XCTAssertEqual(host.bounds.height - smallPaneHeight, 300, accuracy: 1)
         XCTAssertGreaterThan(
             largeHeight - smallHeight, 200,
             "The editor must grow with its pane instead of remaining a minimum-height field inside a scroll view")

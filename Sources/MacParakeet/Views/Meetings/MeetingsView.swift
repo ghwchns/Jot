@@ -480,7 +480,7 @@ struct MeetingsView: View {
                     icon: "sparkles",
                     title: "Set up AI for auto-notes",
                     detail:
-                        "Choose an AI provider and MacParakeet will write notes for you automatically when a meeting ends.",
+                        "Choose an AI provider and Jot will write notes for you automatically when a meeting ends.",
                     actionTitle: "Set Up AI",
                     actionIcon: "gearshape",
                     action: onOpenAISettings
@@ -1608,7 +1608,7 @@ private struct CalendarEventRow: View {
     private var skipCaption: String? {
         guard skipScope != nil else { return nil }
         if isNotifyOnly {
-            return "MacParakeet won't remind you or start recording."
+            return "Jot won't remind you or start recording."
         }
         if skipScope == .occurrence, event.isRecurring {
             return "Won't auto-record this time."

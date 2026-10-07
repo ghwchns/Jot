@@ -18,7 +18,7 @@ Replace `TriggerKey` enum with a `HotkeyTrigger` struct that supports both modif
 
 2. **`HotkeyTrigger` struct with `kind` discriminator** — A `.modifier` vs `.keyCode` discriminator cleanly separates the two event detection paths while sharing the same state machine.
 
-3. **Event swallowing for regular key triggers** — When a non-modifier key is the trigger, `keyDown`/`keyUp` events are swallowed (return `nil` from CGEvent callback) to prevent the key from reaching the active app. Modifier triggers continue to pass through.
+3. **Regular key ownership** — Bare-key single-tap toggles use the macOS registered-hotkey dispatcher, which owns press/release and prevents the key from reaching the active app. An optional listen-only event tap handles Escape but never dispatches the registered trigger. Other regular-key gestures swallow `keyDown`/`keyUp` events from their CGEvent tap. Modifier triggers continue to pass through.
 
 4. **No bare-tap filtering for regular keys** — The "bare-tap" problem (Ctrl+C shouldn't trigger on Ctrl release) is modifier-specific. Regular keys have no chord ambiguity.
 

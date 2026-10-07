@@ -101,19 +101,23 @@ struct DictationHistoryView: View {
                 .opacity(0.4)
 
             VStack(spacing: DesignSystem.Spacing.sm) {
-                Text(viewModel.searchText.isEmpty
-                     ? "Your voice, captured."
-                     : "No matching records")
-                    .font(DesignSystem.Typography.pageTitle)
-                    .foregroundStyle(.primary)
+                Text(
+                    viewModel.searchText.isEmpty
+                        ? "Your voice, captured."
+                        : "No matching records"
+                )
+                .font(DesignSystem.Typography.pageTitle)
+                .foregroundStyle(.primary)
 
-                Text(viewModel.searchText.isEmpty
-                     ? (HotkeyTrigger.current.isDisabled
-                        ? "Click the dictation pill or set a hotkey in Settings to start dictating."
-                        : "Tap \(HotkeyTrigger.current.displayName) to start dictating from any app.")
-                     : "Try different words or clear your search.")
-                    .font(DesignSystem.Typography.bodySmall)
-                    .foregroundStyle(.secondary)
+                Text(
+                    viewModel.searchText.isEmpty
+                        ? (HotkeyTrigger.current.isDisabled
+                            ? "Click the dictation pill or set a hotkey in Settings to start dictating."
+                            : "Tap \(HotkeyTrigger.current.displayName) to start dictating from any app.")
+                        : "Try different words or clear your search."
+                )
+                .font(DesignSystem.Typography.bodySmall)
+                .foregroundStyle(.secondary)
             }
 
             Spacer()

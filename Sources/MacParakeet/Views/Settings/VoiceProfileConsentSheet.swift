@@ -36,7 +36,7 @@ struct VoiceProfileConsentSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Remember Speakers")
                     .font(DesignSystem.Typography.pageTitle)
-                Text("Before MacParakeet keeps anyone's voice.")
+                Text("Before Jot keeps anyone's voice.")
                     .font(DesignSystem.Typography.caption)
                     .foregroundStyle(.secondary)
             }
@@ -48,7 +48,7 @@ struct VoiceProfileConsentSheet: View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
             point(
                 "person.crop.circle.badge.checkmark",
-                "When you name someone in a transcript, MacParakeet can keep a sample of their voice and suggest that name in later meetings. It never applies a name on its own."
+                "When you name someone in a transcript, Jot can keep a sample of their voice and suggest that name in later meetings. It never applies a name on its own."
             )
             point(
                 "hand.raised",
@@ -60,7 +60,7 @@ struct VoiceProfileConsentSheet: View {
             )
             point(
                 "clock.arrow.circlepath",
-                "Temporary voice samples expire after seven days. Expired samples cannot be used; cleanup runs while MacParakeet is open and resumes at the next launch."
+                "Temporary voice samples expire after seven days. Expired samples cannot be used; cleanup runs while Jot is open and resumes at the next launch."
             )
         }
     }

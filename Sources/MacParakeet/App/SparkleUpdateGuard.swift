@@ -1,7 +1,7 @@
 import Foundation
 import Sparkle
 
-/// Gates Sparkle update checks against two conditions where letting an update
+/// Gates Sparkle update checks against conditions where letting an update
 /// proceed would lose user data or be wrong:
 ///
 /// 1. **Active meeting recording.** ADR-019's recording-lock recovery covers a
@@ -18,6 +18,9 @@ import Sparkle
 ///    developer running their work-in-progress shouldn't suddenly find their
 ///    app replaced with the production build mid-session.
 ///
+/// 3. **Personal builds.** An explicit bundle flag keeps the Jot fork on
+///    manually reviewed updates, including after a release version is assigned.
+///
 /// Implemented by throwing from `updater(_:mayPerform:)` so both auto-checks
 /// (background timer) and user-initiated checks (the menu item) are blocked
 /// uniformly, and by returning `false` from `updaterShouldRelaunchApplication`
@@ -29,6 +32,7 @@ final class SparkleUpdateGuard: NSObject {
     enum BlockReason: Equatable {
         case devBuild(version: String?)
         case meetingRecordingActive
+        case personalBuild
     }
 
     private let isMeetingRecordingActive: () -> Bool
@@ -51,7 +55,10 @@ final class SparkleUpdateGuard: NSObject {
         return false
     }
 
-    static func blockReason(appVersion: String?, isMeetingRecordingActive: Bool) -> BlockReason? {
+    static func blockReason(
+        appVersion: String?, isMeetingRecordingActive: Bool, isPersonalBuild: Bool = false
+    ) -> BlockReason? {
+        if isPersonalBuild { return .personalBuild }
         if isDevBuildVersion(appVersion) {
             return .devBuild(version: appVersion)
         }
@@ -62,23 +69,23 @@ final class SparkleUpdateGuard: NSObject {
     }
 
     private func currentBlockReason() -> BlockReason? {
-        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-        if Self.isDevBuildVersion(appVersion) {
-            return .devBuild(version: appVersion)
-        }
-        if isMeetingRecordingActive() {
-            return .meetingRecordingActive
-        }
-        return nil
+        Self.blockReason(
+            appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+            isMeetingRecordingActive: isMeetingRecordingActive(),
+            isPersonalBuild: Bundle.main.infoDictionary?["MacParakeetPersonalBuild"] as? Bool ?? false
+        )
     }
 
     private static func error(for reason: BlockReason) -> NSError {
-        let message: String = switch reason {
-        case .devBuild(let version):
-            "Dev builds skip update checks (version: \(version ?? "<missing>"))."
-        case .meetingRecordingActive:
-            "Update checks are paused while a meeting recording is active. Stop the recording and try again."
-        }
+        let message: String =
+            switch reason {
+            case .devBuild(let version):
+                "Dev builds skip update checks (version: \(version ?? "<missing>"))."
+            case .meetingRecordingActive:
+                "Update checks are paused while a meeting recording is active. Stop the recording and try again."
+            case .personalBuild:
+                "This personal build is updated manually after upstream review."
+            }
         return NSError(
             domain: "com.macparakeet.update-guard",
             code: reason.errorCode,
@@ -110,6 +117,7 @@ private extension SparkleUpdateGuard.BlockReason {
         switch self {
         case .devBuild: return 1
         case .meetingRecordingActive: return 2
+        case .personalBuild: return 3
         }
     }
 }

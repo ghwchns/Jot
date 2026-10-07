@@ -84,6 +84,11 @@ meeting preview warm-up and inference without changing capture or final STT.
   Nemotron or Parakeet Unified build without knowing the concrete engine type.
 
 **Hotkey state (lives here for testability)**
+- The app's `HotkeyManager` uses a macOS registered shortcut for bare-key
+  single-tap toggles, including F5. It owns press/release and repeat filtering;
+  the optional listen-only event tap handles Escape and never consumes or
+  dispatches that trigger. Modifier, chord, hold and combined gestures retain
+  the dedicated-thread event tap.
 - `FnKeyStateMachine.swift` — pure state machine for legacy combined
   dictation gestures and shared timing constants.
 - `HotkeyGestureController.swift` — wraps the state machine for the

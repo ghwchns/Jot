@@ -1,14 +1,10 @@
 import AppKit
+import MacParakeetCore
 import MacParakeetViewModels
 import SwiftUI
 
-private final class MeetingRecordingClickablePanel: NSPanel {
-    override var canBecomeKey: Bool { false }
-    override var canBecomeMain: Bool { false }
-}
-
 /// Custom content view that forwards right-click for context menu.
-private class PillContentView: NSView {
+final class PillContentView: NSView {
     var onRightClick: ((NSEvent) -> Void)?
 
     override var isOpaque: Bool { false }
@@ -26,7 +22,7 @@ private class PillContentView: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        activePillRect.contains(point) ? super.hitTest(point) : nil
+        activePillRect.contains(convert(point, from: superview)) ? super.hitTest(point) : nil
     }
 
     override func rightMouseDown(with event: NSEvent) {
@@ -68,8 +64,7 @@ private class PillMenuDelegate: NSObject {
 
 @MainActor
 final class MeetingRecordingPillController {
-    private var panel: NSPanel?
-    private var preservedFrameForNextShow: NSRect?
+    private var panel: FloatingPillPanel?
     private weak var pillView: MeetingRecordingAppKitPillView?
     private let pillViewModel: MeetingRecordingPillViewModel
     var onClick: (() -> Void)?
@@ -116,42 +111,21 @@ final class MeetingRecordingPillController {
         contentView.addSubview(view)
         self.pillView = view
 
-        let panel = MeetingRecordingClickablePanel(
-            contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
-            styleMask: [.nonactivatingPanel, .borderless],
-            backing: .buffered,
-            defer: false
-        )
+        let panel = FloatingPillPanel(role: .meeting, size: CGSize(width: panelWidth, height: panelHeight))
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.isMovableByWindowBackground = true
         panel.contentView = contentView
 
-        if let preservedFrame = preservedFrameForNextShow {
-            panel.setFrame(preservedFrame, display: false)
-            preservedFrameForNextShow = nil
-        } else if let screen = NSScreen.main {
-            let frame = screen.visibleFrame
-            let x = frame.maxX - panelWidth
-            let y = frame.midY - panelHeight / 2
-            panel.setFrameOrigin(NSPoint(x: x, y: y))
-        }
+        panel.restorePillPosition()
 
         panel.orderFront(nil)
         self.panel = panel
     }
 
-    func hide(preserveFrameForNextShow: Bool = false) {
-        if preserveFrameForNextShow {
-            if let frame = panel?.frame {
-                preservedFrameForNextShow = frame
-            }
-        } else {
-            preservedFrameForNextShow = nil
-        }
+    func hide() {
         panel?.orderOut(nil)
         panel = nil
         pillView = nil
@@ -260,7 +234,7 @@ final class MeetingRecordingPillController {
         menu.addItem(stopItem)
 
         let openItem = NSMenuItem(
-            title: "Open MacParakeet", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
+            title: "Open Jot", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
         openItem.representedObject = "open"
         openItem.target = delegate
         if let openImage = NSImage(systemSymbolName: "bird", accessibilityDescription: nil) {
@@ -320,7 +294,7 @@ final class MeetingRecordingPillController {
         menu.addItem(.separator())
 
         let openItem = NSMenuItem(
-            title: "Open MacParakeet", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
+            title: "Open Jot", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
         openItem.representedObject = "open"
         openItem.target = delegate
         openItem.isEnabled = true
@@ -356,7 +330,7 @@ final class MeetingRecordingPillController {
         case .error:
             headerTitle = "Recording interrupted"
         default:
-            headerTitle = "MacParakeet"
+            headerTitle = "Jot"
         }
         let headerItem = NSMenuItem(title: headerTitle, action: nil, keyEquivalent: "")
         headerItem.isEnabled = false
@@ -365,7 +339,7 @@ final class MeetingRecordingPillController {
         menu.addItem(.separator())
 
         let openItem = NSMenuItem(
-            title: "Open MacParakeet", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
+            title: "Open Jot", action: #selector(PillMenuDelegate.menuAction(_:)), keyEquivalent: "")
         openItem.representedObject = "open"
         openItem.target = delegate
         openItem.isEnabled = true
@@ -380,7 +354,7 @@ final class MeetingRecordingPillController {
     }
 }
 
-private final class MeetingRecordingAppKitPillView: NSView {
+final class MeetingRecordingAppKitPillView: FloatingPillInteractionView {
     private let viewModel: MeetingRecordingPillViewModel
     private let onTap: () -> Void
     private let iconView = MerkabaPillIconView()
@@ -509,8 +483,14 @@ private final class MeetingRecordingAppKitPillView: NSView {
         updateTimeBadge()
     }
 
-    override func mouseDown(with event: NSEvent) {
-        onTap()
+    override func pillClicked(at point: CGPoint) {
+        if bounds.contains(point) { onTap() }
+    }
+
+    // The glyph is decorative; this view owns the first click and drag even
+    // when the pointer lands directly on that child.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        bounds.contains(convert(point, from: superview)) ? self : nil
     }
 
     private func setupLayers() {

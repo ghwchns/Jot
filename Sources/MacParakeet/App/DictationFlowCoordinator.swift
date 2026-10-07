@@ -262,9 +262,10 @@ final class DictationFlowCoordinator {
         activeSpeechEngine: @escaping @MainActor () -> SpeechEnginePreference = { SpeechEnginePreference.current() },
         mediaPauseCoordinator: (any DictationMediaPauseCoordinating)? = nil,
         playCaptureCue: @escaping @MainActor (AppSound) -> Void = { SoundManager.shared.play($0) },
-        overlayControllerFactory: @escaping @MainActor (DictationOverlayViewModel) -> any DictationOverlayControlling = {
-            DictationOverlayController(viewModel: $0)
-        },
+        overlayControllerFactory: @escaping @MainActor (DictationOverlayViewModel) -> any DictationOverlayControlling =
+            {
+                DictationOverlayController(viewModel: $0)
+            },
         shouldSuppressIdlePill: @escaping () -> Bool = { false },
         isStartSuppressed: @escaping () -> Bool = { false },
         onMenuBarIconUpdate: @escaping (BreathWaveIcon.MenuBarState) -> Void,
@@ -593,7 +594,8 @@ final class DictationFlowCoordinator {
         }
 
         if Self.mediaPauseCaptureActive(for: oldState),
-           !Self.mediaPauseCaptureActive(for: stateMachine.state) {
+            !Self.mediaPauseCaptureActive(for: stateMachine.state)
+        {
             Task { @MainActor in
                 await self.mediaPauseCoordinator.resumeAfterDictationCapture()
             }
@@ -816,16 +818,16 @@ final class DictationFlowCoordinator {
             let action = pendingPostPasteAction
             pendingPostPasteAction = nil
             let transcriptHasText = !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            let appendsTrailingSpace = !(
-                dictation.processingMode.usesDeterministicPipeline
-                && insertionStyle == .inline
-            )
+            let appendsTrailingSpace =
+                !(dictation.processingMode.usesDeterministicPipeline
+                && insertionStyle == .inline)
             let normalPasteText = appendsTrailingSpace ? transcript + " " : transcript
             let insertText = action == nil ? normalPasteText : transcript
             // IME/Reduce Motion are sampled once at dispatch. A layout switch
             // during the short stream is accepted risk; paste remains the fallback
             // when capability is unknown.
-            let shouldStream = !sessionIsPractice
+            let shouldStream =
+                !sessionIsPractice
                 && self.runtimePreferences.dictationStreamingCursorEnabled
                 && !self.shouldReduceMotion()
                 && self.inputSourceAllowsStreaming()
@@ -888,14 +890,18 @@ final class DictationFlowCoordinator {
                                 self.currentDictation = completedDictation
                             }
                         } catch {
-                            self.dictationLog.error("Failed to save pastedToApp metadata error=\(error.localizedDescription, privacy: .public)")
+                            self.dictationLog.error(
+                                "Failed to save pastedToApp metadata error=\(error.localizedDescription, privacy: .public)"
+                            )
                         }
                     }
 
                     let rawChars = dictation.rawTranscript.count
                     let cleanChars = dictation.cleanTranscript?.count ?? 0
                     let app = completedDictation.pastedToApp ?? "none"
-                    self.dictationLog.notice("dictation_completed gen=\(gen) outcome=success rawChars=\(rawChars) cleanChars=\(cleanChars) autoPasted=true pastedToApp=\(app, privacy: .public)")
+                    self.dictationLog.notice(
+                        "dictation_completed gen=\(gen) outcome=success rawChars=\(rawChars) cleanChars=\(cleanChars) autoPasted=true pastedToApp=\(app, privacy: .public)"
+                    )
 
                     guard self.stateMachine.generation == gen else { return }
                     self.dismissCaption(outcome: .success)
@@ -906,13 +912,17 @@ final class DictationFlowCoordinator {
                 } catch {
                     guard !Task.isCancelled else { return }
                     let bucket = Self.commandFailureBucket(for: error)
-                    self.dictationLog.error("dictation_paste_failed gen=\(gen) bucket=\(bucket, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                    self.dictationLog.error(
+                        "dictation_paste_failed gen=\(gen) bucket=\(bucket, privacy: .public) error=\(error.localizedDescription, privacy: .public)"
+                    )
                     self.pendingInsertTimings = nil
                     guard self.stateMachine.generation == gen else { return }
                     self.dismissCaption(outcome: .failure)
                     if !transcriptHasText {
                         // Pure action-only dictation (e.g., "press return") — nothing to paste
-                        self.sendEvent(.pasteFailed(generation: gen, message: "Keystroke failed. Check Accessibility permissions."))
+                        self.sendEvent(
+                            .pasteFailed(generation: gen, message: "Keystroke failed. Check Accessibility permissions.")
+                        )
                     } else if error as? StreamingCursorError == .partialInsert {
                         let copied = await self.clipboardService.copyToClipboard(insertText)
                         guard !Task.isCancelled, self.stateMachine.generation == gen else { return }
@@ -956,11 +966,12 @@ final class DictationFlowCoordinator {
         // MARK: App integration
 
         case .updateMenuBar(let menuBarState):
-            let iconState: BreathWaveIcon.MenuBarState = switch menuBarState {
-            case .idle: .idle
-            case .recording: .recording
-            case .processing: .processing
-            }
+            let iconState: BreathWaveIcon.MenuBarState =
+                switch menuBarState {
+                case .idle: .idle
+                case .recording: .recording
+                case .processing: .processing
+                }
             onMenuBarIconUpdate(iconState)
 
         case .syncHotkeyRecordingMode(let mode):
@@ -1142,10 +1153,11 @@ final class DictationFlowCoordinator {
 
         if let shownAt = captionShownAt {
             let durationMs = max(0, Int(Date().timeIntervalSince(shownAt) * 1000))
-            Telemetry.send(.dictationFirstLoadCaptionDuration(
-                durationMs: durationMs,
-                outcome: outcome.telemetryValue
-            ))
+            Telemetry.send(
+                .dictationFirstLoadCaptionDuration(
+                    durationMs: durationMs,
+                    outcome: outcome.telemetryValue
+                ))
             captionShownAt = nil
         }
         setProcessingLoadCaption(nil)
@@ -1284,7 +1296,8 @@ final class DictationFlowCoordinator {
                     )
                     // Send startFailed so the flow state machine exits startingService.
                     // Without this, the flow gets stuck with no recovery event.
-                    self.sendEvent(.startFailed(generation: generation, message: "Recording could not start — please try again"))
+                    self.sendEvent(
+                        .startFailed(generation: generation, message: "Recording could not start — please try again"))
                     return
                 }
                 guard !Task.isCancelled else { return }
@@ -1347,7 +1360,8 @@ final class DictationFlowCoordinator {
 
     private static func isMicrophonePermissionDenied(_ error: Error) -> Bool {
         if let audioError = error as? AudioProcessorError,
-           case .microphonePermissionDenied = audioError {
+            case .microphonePermissionDenied = audioError
+        {
             return true
         }
         return false
@@ -1386,7 +1400,8 @@ final class DictationFlowCoordinator {
 
         let alert = NSAlert()
         alert.messageText = Self.microphoneAccessRequiredMessage
-        alert.informativeText = "MacParakeet needs microphone access to record dictation. Open System Settings → Privacy & Security → Microphone to enable it, then try again."
+        alert.informativeText =
+            "Jot needs microphone access to record dictation. Open System Settings → Privacy & Security → Microphone to enable it, then try again."
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Open System Settings")
         alert.addButton(withTitle: "Cancel")
@@ -1566,7 +1581,9 @@ final class DictationFlowCoordinator {
             dictationLog.notice("dictation_completed gen=\(generation) outcome=\(phase, privacy: .public)_no_speech")
             sendEvent(.transcriptionFailedNoSpeech(generation: generation))
         } else {
-            dictationLog.error("dictation_completed gen=\(generation) outcome=\(phase, privacy: .public)_failed error=\(error.localizedDescription, privacy: .public)")
+            dictationLog.error(
+                "dictation_completed gen=\(generation) outcome=\(phase, privacy: .public)_failed error=\(error.localizedDescription, privacy: .public)"
+            )
             sendEvent(.transcriptionFailed(generation: generation, message: error.localizedDescription))
         }
     }

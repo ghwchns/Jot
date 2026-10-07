@@ -541,6 +541,8 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
     private let invalidBufferTimeout: TimeInterval
     private let callbackStallCheckInterval: TimeInterval
     private var audioEngine = AVAudioEngine()
+    private var selectedMicrophoneCapture: SelectedMicrophoneCapture?
+    private var selectedCaptureGeneration: UInt64 = 0
     private var running: Bool = false
     private var lastSucceededAttemptLocked: MeetingInputDeviceAttempt?
     /// Input format + resolved route + attempt captured when the running engine
@@ -773,6 +775,7 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         dispatchPrecondition(condition: .notOnQueue(queue))
         return queue.sync {
             guard running else { return nil }
+            if let capture = selectedMicrophoneCapture { return capture.inputFormat }
             do {
                 let format = try catchingObjCException {
                     audioEngine.inputNode.outputFormat(forBus: 0)
@@ -1060,7 +1063,7 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
                 source: attempt.source.logValue, transport: transport, prepared: false
             )
             var setDeviceMilliseconds = "0.000"
-            if let deviceID = attempt.explicitDeviceID {
+            if let deviceID = attempt.explicitDeviceID, vpioEnabled || engineStarter != nil {
                 activeLifecycleDiagnosticsLocked?.enter(.setDevice)
                 let setDeviceStartedAt = Self.nowNanos()
                 let didSetDevice = inputDeviceSetter(deviceID, audioEngine)
@@ -1094,11 +1097,13 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
                     bufferSize: bufferSize,
                     tapHandler: tapHandler,
                     startNow: startNow,
-                    // Core Audio can temporarily hide the default device,
-                    // transport, or aggregate topology while a route settles.
-                    // Keep that uncertain window strict so zero-filled
-                    // Bluetooth PCM cannot be mistaken for a ready source.
-                    requiresNonZeroSignal: resolvedBluetoothState ?? true,
+                    selectedRawDeviceID: vpioEnabled ? nil : attempt.explicitDeviceID,
+                    // A direct raw capture identifies the actual microphone;
+                    // valid digital silence must start before the user speaks.
+                    // AVAudioEngine's implicit/VPIO routes keep their existing
+                    // nonzero protection for Bluetooth or uncertain topology.
+                    requiresNonZeroSignal: !vpioEnabled && attempt.explicitDeviceID != nil
+                        ? false : resolvedBluetoothState ?? true,
                     expectedDefaultInputGeneration: startNow && attempt.usesImplicitSystemDefault
                         ? pendingAttempt.defaultInputGeneration
                         : nil,
@@ -1201,11 +1206,12 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         bufferSize: AVAudioFrameCount,
         tapHandler: @escaping @Sendable (AVAudioPCMBuffer, AVAudioTime) -> Void,
         startNow: Bool = true,
+        selectedRawDeviceID: AudioDeviceID? = nil,
         requiresNonZeroSignal: Bool,
         expectedDefaultInputGeneration: UInt64?,
         startupCancellationGeneration: UInt64
     ) throws {
-        guard let engineStarter else {
+        guard engineStarter != nil || selectedRawDeviceID != nil else {
             try startEngineLocked(
                 vpioEnabled: vpioEnabled,
                 bufferSize: bufferSize,
@@ -1226,6 +1232,22 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
             },
             tapHandler
         )
+        if engineStarter == nil, let deviceID = selectedRawDeviceID {
+            selectedCaptureGeneration &+= 1
+            let generation = selectedCaptureGeneration
+            activeLifecycleDiagnosticsLocked?.enter(.setDevice)
+            selectedMicrophoneCapture = try SelectedMicrophoneCapture(
+                deviceID: deviceID,
+                handler: { buffer, time in installedTapHandler.invoke(buffer: buffer, time: time) },
+                onFailure: { [weak self] in
+                    guard let self else { return }
+                    self.queue.async { [weak self] in
+                        guard let self, self.selectedCaptureGeneration == generation, self.running else { return }
+                        self.recoverAfterLivenessFailureLocked(trigger: "selected_microphone_failure")
+                    }
+                }
+            )
+        }
         guard startNow else {
             tapHandlerBox = installedTapHandler
             return
@@ -1238,7 +1260,11 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         let startupConfigurationGeneration = beginStartupObservationLocked()
         do {
             activeLifecycleDiagnosticsLocked?.enter(.startEngine)
-            try engineStarter(audioEngine, vpioEnabled, bufferSize, monitoredTapHandler)
+            if let engineStarter {
+                try engineStarter(audioEngine, vpioEnabled, bufferSize, monitoredTapHandler)
+            } else {
+                selectedMicrophoneCapture?.start()
+            }
         } catch {
             activeLifecycleDiagnosticsLocked?.noteError(error)
             replaceEngineAfterFailureLocked()
@@ -1504,9 +1530,13 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         prepared = true
         preparedAttempt = attempt
         activeLifecycleDiagnosticsLocked?.enter(.inputFormat)
-        preparedInputConfiguration = InputConfigurationSnapshot(
-            UncheckedSendableAudioEngine(audioEngine).inputFormat()
-        )
+        let format: AVAudioFormat?
+        if let capture = selectedMicrophoneCapture {
+            format = capture.inputFormat
+        } else {
+            format = UncheckedSendableAudioEngine(audioEngine).inputFormat()
+        }
+        preparedInputConfiguration = InputConfigurationSnapshot(format)
         preparedVPIO = vpioEnabled
         preparedBufferSize = bufferSize
         // AVAudioEngine can emit a configuration-change notification as a
@@ -1560,6 +1590,8 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
                     preparedBufferSize,
                     monitoredTapHandler
                 )
+            } else if let capture = selectedMicrophoneCapture {
+                capture.start()
             } else {
                 try catchingObjCException {
                     try audioEngine.start()
@@ -1633,6 +1665,17 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         if !preserveRouteObservation {
             removeRouteChangeObserversLocked()
         }
+        if let capture = selectedMicrophoneCapture {
+            selectedCaptureGeneration &+= 1
+            capture.stop()
+            selectedMicrophoneCapture = nil
+            // Never instantiate the unused AVAudioEngine input node here: that
+            // would acquire the system-default Bluetooth mic during teardown.
+            audioEngine = AVAudioEngine()
+            running = false
+            lastSucceededAttemptLocked = nil
+            return
+        }
         guard engineStarter == nil else {
             audioEngine = AVAudioEngine()
             running = false
@@ -1675,6 +1718,9 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         tapHandlerBox?.clear()
         tapHandlerBox = nil
         removeConfigurationChangeObserverLocked()
+        selectedCaptureGeneration &+= 1
+        selectedMicrophoneCapture?.stop()
+        selectedMicrophoneCapture = nil
         try? catchingObjCException {
             audioEngine.stop()
         }
@@ -1700,7 +1746,7 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
     /// the client restarts the engine; this observer fulfils that contract
     /// while the watchdog/heartbeat in `AudioRecorder` remain log-only.
     private func installConfigurationChangeObserverLocked() {
-        guard configurationChangeObserver == nil else { return }
+        guard selectedMicrophoneCapture == nil, configurationChangeObserver == nil else { return }
         let token = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange,
             object: audioEngine,
@@ -1975,7 +2021,7 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
             return
         }
 
-        let engineIsRunning = audioEngine.isRunning
+        let engineIsRunning = selectedMicrophoneCapture?.isRunning ?? audioEngine.isRunning
         let trigger: String
         switch failure {
         case .callbackGap(let gap):
