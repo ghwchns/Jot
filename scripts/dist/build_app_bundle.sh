@@ -658,9 +658,10 @@ CHECKOUT_URL="${MACPARAKEET_CHECKOUT_URL:-}"
 LS_VARIANT_ID="${MACPARAKEET_LS_VARIANT_ID:-}"
 LICENSING_PLIST=""
 PERSONAL_BUILD_PLIST=""
+SU_AUTOMATIC_CHECKS="true"
 if [[ "$PERSONAL_BUILD" == "1" ]]; then
+  SU_AUTOMATIC_CHECKS="false"
   PERSONAL_BUILD_PLIST="  <key>MacParakeetPersonalBuild</key><true/>
-  <key>SUEnableAutomaticChecks</key><false/>
   <key>SUAutomaticallyUpdate</key><false/>"
 fi
 if [[ -n "$CHECKOUT_URL" ]]; then
@@ -735,7 +736,7 @@ ${PERSONAL_BUILD_PLIST}
   <key>SUFeedURL</key>
   <string>${SU_FEED_URL}</string>
   <key>SUEnableAutomaticChecks</key>
-  <true/>
+  <${SU_AUTOMATIC_CHECKS}/>
   <key>SUPublicEDKey</key>
   <string>${SU_PUBLIC_ED_KEY}</string>
 $(printf "%b" "$LICENSING_PLIST")

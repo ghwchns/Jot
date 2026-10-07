@@ -39,6 +39,9 @@ public final class HotkeyManager {
     /// (#1142). All state below is main-thread only.
     private var backgroundTap: BackgroundEventTap?
     private var registeredKeyHotkey: RegisteredKeyHotkeyListening?
+    /// Registration edges survive UI/coordinator gesture resets while the key
+    /// is held, so an autorepeat cannot start a new take after stopping one.
+    private var registeredTriggerKeyIsPressed = false
     /// Bumped on every start and stop so events forwarded by an earlier tap
     /// are dropped instead of driving the current session.
     private var tapGeneration: UInt64 = 0
@@ -184,6 +187,7 @@ public final class HotkeyManager {
     public func stop() {
         registeredKeyHotkey?.stop()
         registeredKeyHotkey = nil
+        registeredTriggerKeyIsPressed = false
         backgroundTap?.stop()
         backgroundTap = nil
         tapGeneration &+= 1
@@ -221,9 +225,12 @@ public final class HotkeyManager {
     func startRegisteredKeyHotkey(factory: RegisteredKeyHotkey.Factory = RegisteredKeyHotkey.start) -> Bool {
         guard usesRegisteredKeyHotkey, let keyCode = trigger.keyCode else { return false }
         registeredKeyHotkey?.stop()
+        registeredTriggerKeyIsPressed = false
         let generation = tapGeneration
         registeredKeyHotkey = factory(keyCode) { [weak self] pressed in
             guard let self, self.registeredKeyHotkey != nil, self.tapGeneration == generation else { return }
+            guard self.registeredTriggerKeyIsPressed != pressed else { return }
+            self.registeredTriggerKeyIsPressed = pressed
             self.handleOutputs(
                 self.triggerKeyEventOutputs(
                     type: pressed ? .keyDown : .keyUp, timestampMs: Self.currentTimestampMs()

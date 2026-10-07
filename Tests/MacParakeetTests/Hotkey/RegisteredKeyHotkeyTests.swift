@@ -28,7 +28,10 @@ final class RegisteredKeyHotkeyTests: XCTestCase {
             XCTAssertEqual(mode, .persistent)
             starts += 1
         }
-        manager.onStopRecording = { stops += 1 }
+        manager.onStopRecording = { [weak manager] in
+            stops += 1
+            manager?.resetToIdle()  // production coordinator resets all peers
+        }
         XCTAssertTrue(
             manager.startRegisteredKeyHotkey { keyCode, callback in
                 XCTAssertEqual(keyCode, 96)
@@ -82,6 +85,30 @@ final class RegisteredKeyHotkeyTests: XCTestCase {
     func testRegistrationFailureDoesNotClaimWorkingShortcut() {
         let manager = HotkeyManager(trigger: .fromKeyCode(96), gestureMode: .singleTapToggle)
         XCTAssertFalse(manager.startRegisteredKeyHotkey { _, _ in nil })
+    }
+
+    func testRejectedStartDoesNotRearmUntilPhysicalRelease() throws {
+        let manager = HotkeyManager(trigger: .fromKeyCode(96), gestureMode: .singleTapToggle)
+        var event: ((Bool) -> Void)?
+        var starts = 0
+        manager.onStartRecording = { [weak manager] _ in
+            starts += 1
+            manager?.resetToIdle()  // capture not admitted by the coordinator
+        }
+        XCTAssertTrue(
+            manager.startRegisteredKeyHotkey { _, callback in
+                event = callback
+                return Listener()
+            }
+        )
+        let press = try XCTUnwrap(event)
+        press(true)
+        press(true)
+        XCTAssertEqual(starts, 1)
+        press(false)
+        press(true)
+        XCTAssertEqual(starts, 2)
+        manager.stop()
     }
 
     func testEscapeStillCancelsRegisteredTake() throws {
