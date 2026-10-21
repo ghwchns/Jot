@@ -215,7 +215,7 @@ Legacy default installs using `Fn+Space` hands-free plus `Fn` push-to-talk migra
 - On key-up: dedicated push-to-talk releases after startup debounce stop and process.
 - Escape cannot be assigned as a hotkey. It cancels a live dictation by default (`escapeCancelsDictation`). Off leaves Escape for the front app during a live take. A pending gesture that has not started a take still clears.
 - Requires Accessibility permission (prompted on first activation).
-- Stop orchestration is state-driven (proceed, defer-until-recording, reject-not-recording) to avoid first-start races when stop arrives before `startRecording()` fully transitions to `.recording`.
+- F5 starts capture, and the next press exits even if the microphone fails; the stuck indicator and restart cycle must disappear. During hands-free startup, Stop cancels the pending capture and returns the overlay and hotkey to idle immediately; a late native success is cleaned up without pasting or reopening the overlay. Hold-to-talk release during startup retains deferred stop so the short held take can finish normally.
 - Duplicate stop requests are ignored while a stop/cancel/undo overlay action is already in-flight (idempotent stop behavior).
 
 **Recording flow:**
@@ -239,8 +239,8 @@ Legacy default installs using `Fn+Space` hands-free plus `Fn` push-to-talk migra
 │    - Tap the hands-free shortcut again, OR                       │
 │    - Press Escape (soft cancel with undo window, default on), OR │
 │    - Silence auto-stop (2s default, if enabled in settings)      │
-│    - If stop is requested while startup is in-flight, stop is     │
-│      deferred and executed immediately once recording is active    │
+│    - Hands-free stop during startup exits immediately           │
+│    - Hold release during startup stops once capture is active   │
 ├─────────────────────────────────────────────────────────────────┤
 │ 5. Processing                                                    │
 │    - Overlay transitions to processing state                     │

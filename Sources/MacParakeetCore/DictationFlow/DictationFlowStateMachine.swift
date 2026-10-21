@@ -18,7 +18,7 @@ public enum DictationFlowState: Equatable, Sendable {
     case startingService(mode: FnKeyStateMachine.RecordingMode)
     /// Actively recording. Audio level loop running.
     case recording(mode: FnKeyStateMachine.RecordingMode)
-    /// Stop requested while startRecording still in flight. Will auto-stop once recording begins.
+    /// Hold-to-talk release while startup is in flight. Auto-stop when recording begins.
     case pendingStop(mode: FnKeyStateMachine.RecordingMode)
     /// Stop called, transcription in progress.
     case processing
@@ -250,8 +250,18 @@ public struct DictationFlowStateMachine: Sendable, Equatable {
             state = .finishing(outcome: .error(message))
             return [.showError(message), .resetHotkeyStateMachine, .updateMenuBar(.idle), .startDisplayDismissTimer(seconds: 5)]
 
-        case (.startingService(let mode), .stopRequested):
-            state = .pendingStop(mode: mode)
+        case (.startingService(mode: .persistent), .stopRequested):
+            // A toggle press means exit now, even if native microphone setup
+            // never returns. Cancellation owns eventual cleanup; late startup
+            // completions cannot revive this UI generation.
+            state = .idle
+            return [
+                .cancelRecordingTask, .confirmCancel(reason: .ui), .hideOverlay,
+                .resetHotkeyStateMachine, .updateMenuBar(.idle), .showIdlePill,
+            ]
+
+        case (.startingService(mode: .holdToTalk), .stopRequested):
+            state = .pendingStop(mode: .holdToTalk)
             return []
 
         case (.startingService, .discardRequested(let showReadyPill)):

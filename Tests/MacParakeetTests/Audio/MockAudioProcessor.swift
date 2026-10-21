@@ -10,6 +10,8 @@ public actor MockAudioProcessor: AudioProcessorProtocol {
     private var _audioLevel: Float = 0.0
     private var _isRecording = false
     private var startCaptureDelayMs: UInt64 = 0
+    private var pauseNextStartCapture = false
+    private var startCaptureRelease: CheckedContinuation<Void, Never>?
     private var pauseNextStopCapture = false
     private var strictStopRequiresRecording = false
     private var stopCapturePaused = false
@@ -52,6 +54,17 @@ public actor MockAudioProcessor: AudioProcessorProtocol {
 
     public func configureStartCaptureDelay(milliseconds: UInt64) {
         self.startCaptureDelayMs = milliseconds
+    }
+
+    public func pauseNextStartCaptureUntilReleased() {
+        pauseNextStartCapture = true
+    }
+
+    public var startCaptureIsPaused: Bool { startCaptureRelease != nil }
+
+    public func releasePausedStartCapture() {
+        startCaptureRelease?.resume()
+        startCaptureRelease = nil
     }
 
     public func pauseNextStopCaptureUntilReleased() {
@@ -112,6 +125,11 @@ public actor MockAudioProcessor: AudioProcessorProtocol {
     public func startCapture(sampleSink: DictationAudioSampleSink?) async throws {
         startCaptureCalled = true
         startCaptureCallCount += 1
+        if pauseNextStartCapture {
+            pauseNextStartCapture = false
+            // Model a native start that ignores Swift task cancellation.
+            await withCheckedContinuation { startCaptureRelease = $0 }
+        }
         if startCaptureDelayMs > 0 {
             try await Task.sleep(for: .milliseconds(Int(startCaptureDelayMs)))
         }

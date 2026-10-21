@@ -53,106 +53,72 @@ final class MicrophoneEnginePlatformConfigChangeRecoveryTests: XCTestCase {
         XCTAssertNil(coalescer.takePendingCount(generation: replacement))
     }
 
-    /// Device selection and `AVAudioEngine.prepare()` can enqueue their own
-    /// configuration notification after preparation has already been marked.
-    /// When the resolved route and input format are unchanged, that delayed
-    /// setup echo must leave the prepared engine reusable instead of starting
-    /// the discard -> route-notification -> reprepare loop from issue #928.
-    func testDelayedConfigurationChangeWithUnchangedRouteKeepsPreparedEngine() throws {
+    func testStoppedPreparationIsInvalidatedWithoutFormatQueryOrReprepareNotification() throws {
         let attempt = MeetingInputDeviceAttempt(source: .builtIn, deviceID: 10)
         let startedEngine = OSAllocatedUnfairLock<AVAudioEngine?>(initialState: nil)
+        let formatReads = OSAllocatedUnfairLock(initialState: 0)
+        let notification = expectation(description: "idle invalidation must not start a preload loop")
+        notification.isInverted = true
+        let token = NotificationCenter.default.addObserver(
+            forName: .macParakeetMicrophoneSelectionDidChange,
+            object: nil,
+            queue: nil
+        ) { _ in notification.fulfill() }
+        defer { NotificationCenter.default.removeObserver(token) }
         let buffer = UncheckedSendableAudioPCMBuffer(makeRecoveryTestBuffer())
         let platform = AVAudioEngineMicrophonePlatform(
             deviceAttemptsBuilder: { [attempt] },
             inputDeviceSetter: { _, _ in true },
             bluetoothInputState: { _ in false },
+            configurationChangeFormatProbe: { _ in
+                formatReads.withLock { $0 += 1 }
+                return nil
+            },
             engineStarter: { engine, _, _, tapHandler in
                 startedEngine.withLock { $0 = engine }
                 tapHandler(buffer.buffer, AVAudioTime(hostTime: 1))
             }
         )
         defer { platform.stopEngine() }
-
-        platform.prepare(
-            vpioEnabled: false,
-            bufferSize: 256,
-            tapHandler: { _, _ in }
-        )
+        platform.prepare(vpioEnabled: false, bufferSize: 256, tapHandler: { _, _ in })
         let before = platform.preparedEngineStateForTesting
         XCTAssertTrue(before.prepared)
 
-        NotificationCenter.default.post(
-            name: .AVAudioEngineConfigurationChange,
-            object: before.engine
-        )
-        _ = platform.isEngineRunning  // flush the queued observer handling
-
+        NotificationCenter.default.post(name: .AVAudioEngineConfigurationChange, object: before.engine)
+        _ = platform.isEngineRunning
         let after = platform.preparedEngineStateForTesting
-        XCTAssertTrue(
-            after.prepared,
-            "an unchanged delayed setup notification must not discard preparation"
-        )
-        XCTAssertTrue(
-            before.engine === after.engine,
-            "an unchanged delayed setup notification must retain the prepared engine"
-        )
+        XCTAssertFalse(after.prepared)
+        XCTAssertFalse(before.engine === after.engine)
+        XCTAssertEqual(formatReads.withLock { $0 }, 0, "stopped HAL format queries can hang every audio operation")
+        wait(for: [notification], timeout: 0.1)
 
-        try platform.configureAndStart(
-            vpioEnabled: false,
-            bufferSize: 256,
-            tapHandler: { _, _ in }
-        )
-        XCTAssertTrue(
-            startedEngine.withLock { $0 } === before.engine,
-            "the next capture must use the prepared engine instead of reconfiguring a fresh one"
-        )
+        try platform.configureAndStart(vpioEnabled: false, bufferSize: 256, tapHandler: { _, _ in })
+        XCTAssertTrue(startedEngine.withLock { $0 } === after.engine)
     }
 
-    func testPreparedConfigurationChangeWithDifferentRouteDiscardsAndNotifies() throws {
-        let originalAttempt = MeetingInputDeviceAttempt.implicitSystemDefault(
-            resolvedDeviceID: 10
-        )
-        let changedAttempt = MeetingInputDeviceAttempt.implicitSystemDefault(
-            resolvedDeviceID: 20
-        )
-        let route = OSAllocatedUnfairLock(initialState: [originalAttempt])
-        let routeChange = expectation(description: "route consumers are notified")
-        let token = NotificationCenter.default.addObserver(
-            forName: .macParakeetMicrophoneSelectionDidChange,
-            object: nil,
-            queue: nil
-        ) { _ in
-            routeChange.fulfill()
-        }
-        defer { NotificationCenter.default.removeObserver(token) }
-
+    func testPreparedRouteMutationDoesNotQueryStoppedFormat() throws {
+        let originalRoute = MeetingInputDeviceAttempt.implicitSystemDefault(resolvedDeviceID: 10)
+        let route = OSAllocatedUnfairLock(initialState: [originalRoute])
+        let formatReads = OSAllocatedUnfairLock(initialState: 0)
         let platform = AVAudioEngineMicrophonePlatform(
             deviceAttemptsBuilder: { route.withLock { $0 } },
             inputDeviceSetter: { _, _ in true },
             bluetoothInputState: { _ in false },
+            configurationChangeFormatProbe: { _ in
+                formatReads.withLock { $0 += 1 }
+                return nil
+            },
             engineStarter: { _, _, _, _ in }
         )
         defer { platform.stopEngine() }
-
-        platform.prepare(
-            vpioEnabled: false,
-            bufferSize: 256,
-            tapHandler: { _, _ in }
-        )
+        platform.prepare(vpioEnabled: false, bufferSize: 256, tapHandler: { _, _ in })
         let before = platform.preparedEngineStateForTesting
         XCTAssertTrue(before.prepared)
-
-        route.withLock { $0 = [changedAttempt] }
-        NotificationCenter.default.post(
-            name: .AVAudioEngineConfigurationChange,
-            object: before.engine
-        )
+        route.withLock { $0 = [.implicitSystemDefault(resolvedDeviceID: 20)] }
+        NotificationCenter.default.post(name: .AVAudioEngineConfigurationChange, object: before.engine)
         _ = platform.isEngineRunning
-
-        wait(for: [routeChange], timeout: 0.5)
-        let after = platform.preparedEngineStateForTesting
-        XCTAssertFalse(after.prepared)
-        XCTAssertFalse(before.engine === after.engine)
+        XCTAssertFalse(platform.preparedEngineStateForTesting.prepared)
+        XCTAssertEqual(formatReads.withLock { $0 }, 0)
     }
 
     func testRunningConfigurationChangeNotifiesInputRouteConsumers() throws {

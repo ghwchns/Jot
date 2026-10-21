@@ -334,6 +334,14 @@ microphone is built-in or USB. Preparation validates the resolved leading input 
 does not convert System Default into a `CurrentDevice` write. A default-input
 change invalidates and trailing-debounces a new preparation.
 
+A configuration notification on a prepared/stopped engine invalidates it
+without reading its native input format. Such reads can hang the platform
+queue during route reconfiguration, blocking every subsequent start and stop.
+This idle invalidation does not post a microphone-selection notification:
+repreparing in response would feed the engine's own setup notifications back
+into a preload loop. Default-device notifications still refresh idle
+preparation; otherwise the next requested capture configures a fresh engine.
+
 **The warm hold must never pin a Bluetooth input (issue #481).** An
 idle open Bluetooth microphone forces the headset into HFP/SCO, which
 degrades playback the entire time and can flap the default input.

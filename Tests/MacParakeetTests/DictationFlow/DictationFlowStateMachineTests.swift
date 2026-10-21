@@ -300,15 +300,28 @@ final class DictationFlowStateMachineTests: XCTestCase {
         XCTAssertFalse(effects.contains(.startRecording(mode: .persistent)))
     }
 
-    func testStartingServiceStopRequested() {
+    func testPersistentStopDuringStartupExitsAndRejectsLateCompletion() {
         var m = makeMachine()
         _ = m.handle(.startRequested(mode: .persistent))
         let gen = m.generation
         _ = m.handle(.entitlementsGranted(generation: gen))
 
         let effects = m.handle(.stopRequested)
-        XCTAssertEqual(m.state, .pendingStop(mode: .persistent))
-        XCTAssertTrue(effects.isEmpty) // deferred
+        XCTAssertEqual(m.state, .idle)
+        XCTAssertTrue(effects.contains(.cancelRecordingTask))
+        XCTAssertTrue(effects.contains(.confirmCancel(reason: .ui)))
+        XCTAssertTrue(effects.contains(.hideOverlay))
+        XCTAssertTrue(effects.contains(.resetHotkeyStateMachine))
+        XCTAssertTrue(effects.contains(.updateMenuBar(.idle)))
+        XCTAssertTrue(m.handle(.recordingStarted(generation: gen)).isEmpty)
+        XCTAssertEqual(m.state, .idle)
+
+        _ = m.handle(.startRequested(mode: .persistent))
+        _ = m.handle(.entitlementsGranted(generation: m.generation))
+        XCTAssertTrue(m.handle(.recordingStarted(generation: gen)).isEmpty)
+        XCTAssertEqual(m.state, .startingService(mode: .persistent))
+        _ = m.handle(.recordingStarted(generation: m.generation))
+        XCTAssertEqual(m.state, .recording(mode: .persistent))
     }
 
     func testStartingServiceCancelRequested() {
@@ -506,16 +519,16 @@ final class DictationFlowStateMachineTests: XCTestCase {
 
     func testPendingStopRecordingStarted() {
         var m = makeMachine()
-        _ = m.handle(.startRequested(mode: .persistent))
+        _ = m.handle(.startRequested(mode: .holdToTalk))
         let gen = m.generation
         _ = m.handle(.entitlementsGranted(generation: gen))
         _ = m.handle(.stopRequested) // → pendingStop
-        XCTAssertEqual(m.state, .pendingStop(mode: .persistent))
+        XCTAssertEqual(m.state, .pendingStop(mode: .holdToTalk))
 
         let effects = m.handle(.recordingStarted(generation: gen))
         XCTAssertEqual(m.state, .processing)
         XCTAssertTrue(effects.contains(.cancelRecordingTask))
-        XCTAssertTrue(effects.contains(.stopRecordingAndTranscribe(mode: .persistent)))
+        XCTAssertTrue(effects.contains(.stopRecordingAndTranscribe(mode: .holdToTalk)))
         XCTAssertTrue(effects.contains(.showProcessingState))
         XCTAssertTrue(effects.contains(.updateMenuBar(.processing)))
     }
@@ -535,7 +548,7 @@ final class DictationFlowStateMachineTests: XCTestCase {
 
     func testPendingStopStartFailed() {
         var m = makeMachine()
-        _ = m.handle(.startRequested(mode: .persistent))
+        _ = m.handle(.startRequested(mode: .holdToTalk))
         let gen = m.generation
         _ = m.handle(.entitlementsGranted(generation: gen))
         _ = m.handle(.stopRequested)
@@ -549,7 +562,7 @@ final class DictationFlowStateMachineTests: XCTestCase {
 
     func testPendingStopCancelRequested() {
         var m = makeMachine()
-        _ = m.handle(.startRequested(mode: .persistent))
+        _ = m.handle(.startRequested(mode: .holdToTalk))
         let gen = m.generation
         _ = m.handle(.entitlementsGranted(generation: gen))
         _ = m.handle(.stopRequested)
@@ -562,14 +575,14 @@ final class DictationFlowStateMachineTests: XCTestCase {
 
     func testPendingStopStaleRecordingStarted() {
         var m = makeMachine()
-        _ = m.handle(.startRequested(mode: .persistent))
+        _ = m.handle(.startRequested(mode: .holdToTalk))
         let gen = m.generation
         _ = m.handle(.entitlementsGranted(generation: gen))
         _ = m.handle(.stopRequested)
 
         let effects = m.handle(.recordingStarted(generation: gen - 1))
         XCTAssertTrue(effects.isEmpty)
-        XCTAssertEqual(m.state, .pendingStop(mode: .persistent))
+        XCTAssertEqual(m.state, .pendingStop(mode: .holdToTalk))
     }
 
     // MARK: - Processing
@@ -1108,18 +1121,18 @@ final class DictationFlowStateMachineTests: XCTestCase {
 
     func testPendingStopFullFlow() {
         var m = makeMachine()
-        _ = m.handle(.startRequested(mode: .persistent))
+        _ = m.handle(.startRequested(mode: .holdToTalk))
         let gen = m.generation
         _ = m.handle(.entitlementsGranted(generation: gen))
 
         // Stop while starting
         _ = m.handle(.stopRequested)
-        XCTAssertEqual(m.state, .pendingStop(mode: .persistent))
+        XCTAssertEqual(m.state, .pendingStop(mode: .holdToTalk))
 
         // Recording starts → auto-transitions to processing
         let effects = m.handle(.recordingStarted(generation: gen))
         XCTAssertEqual(m.state, .processing)
-        XCTAssertTrue(effects.contains(.stopRecordingAndTranscribe(mode: .persistent)))
+        XCTAssertTrue(effects.contains(.stopRecordingAndTranscribe(mode: .holdToTalk)))
 
         // Complete transcription
         _ = m.handle(.transcriptionCompleted(generation: gen))
