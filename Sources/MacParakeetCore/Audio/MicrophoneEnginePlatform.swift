@@ -1518,11 +1518,10 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         preparedAttempt = attempt
         preparedVPIO = vpioEnabled
         preparedBufferSize = bufferSize
-        // AVAudioEngine can emit a configuration-change notification as a
-        // consequence of selecting and preparing its own input device. Begin
-        // observing only after that setup is complete so this expected event
-        // cannot invalidate every otherwise reusable preparation. Changes
-        // during the idle prepared interval are still generation-checked.
+        // Observe after setup completes. Any later notification, including a
+        // delayed setup echo, invalidates this preparation without querying
+        // the stopped graph. The generation also rejects a stale key-down
+        // before queued invalidation gets its turn.
         preparedConfigurationGeneration = configurationChangeGeneration.withLock { generation in
             installConfigurationChangeObserverLocked()
             return generation
@@ -1860,7 +1859,7 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
     /// (issue #1102). The observer re-evaluates Bluetooth safety live from the
     /// stored attempt, so a route that becomes Bluetooth/unresolved after commit
     /// (transport flip behind a stable device ID/format) still re-broadcasts
-    /// (#862), matching the `prepared` branch.
+    /// (#862). Stopped preparation is invalidated separately without a query.
     private func recordCommittedConfigurationLocked(
         attempt: MeetingInputDeviceAttempt?,
         route: [MeetingInputDeviceAttempt]?

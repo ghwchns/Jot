@@ -472,7 +472,10 @@ final class DictationFlowCoordinatorTests: XCTestCase {
         let stillPaused = await harness.audio.startCaptureIsPaused
         XCTAssertTrue(stillPaused, "exit must not depend on native start returning")
 
-        let cancelled = await waitUntilAsync { await harness.service.state != .recording }
+        let cancelled = await waitUntilAsync {
+            if case .recording = await harness.service.state { return false }
+            return true
+        }
         XCTAssertTrue(cancelled)
         await harness.audio.releasePausedStartCapture()
         let cleaned = await waitUntilAsync {
