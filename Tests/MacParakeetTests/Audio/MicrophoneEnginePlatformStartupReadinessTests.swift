@@ -515,6 +515,53 @@ final class MicrophoneEnginePlatformStartupReadinessTests: XCTestCase {
         XCTAssertEqual(platform.lastSucceededAttempt, .implicitSystemDefault(resolvedDeviceID: 20))
     }
 
+    func testImplicitBluetoothFreshEngineRetryUsesShortReadinessWindow() throws {
+        let invocationCount = OSAllocatedUnfairLock(initialState: 0)
+        let buffer = UncheckedSendableAudioPCMBuffer(
+            makeStartupReadinessBuffer(nonZero: true)
+        )
+        let platform = AVAudioEngineMicrophonePlatform(
+            deviceAttemptsBuilder: {
+                [
+                    .implicitSystemDefault(resolvedDeviceID: 10),
+                    MeetingInputDeviceAttempt(source: .builtIn, deviceID: 20),
+                ]
+            },
+            inputDeviceSetter: { _, _ in true },
+            startupReadinessTimeout: 0.05,
+            signalRequiredStartupReadinessTimeout: 1.5,
+            bluetoothInputState: { $0 == 10 },
+            engineStarter: { _, _, _, tapHandler in
+                let invocation = invocationCount.withLock { value -> Int in
+                    value += 1
+                    return value
+                }
+                if invocation == 3 {
+                    tapHandler(buffer.buffer, AVAudioTime(hostTime: 1))
+                }
+            }
+        )
+        defer { platform.stopEngine() }
+
+        let startedAt = Date()
+        try platform.configureAndStart(
+            vpioEnabled: false,
+            bufferSize: 256,
+            tapHandler: { _, _ in }
+        )
+        let elapsed = Date().timeIntervalSince(startedAt)
+
+        // The first Bluetooth engine holds the long window; the fresh-engine
+        // retry gets the short one instead of a second long wait.
+        XCTAssertGreaterThanOrEqual(elapsed, 1.4)
+        XCTAssertLessThan(elapsed, 2.5)
+        XCTAssertEqual(invocationCount.withLock { $0 }, 3)
+        XCTAssertEqual(
+            platform.lastSucceededAttempt,
+            MeetingInputDeviceAttempt(source: .builtIn, deviceID: 20)
+        )
+    }
+
     func testPreparedStartFallsBackWhenConfigurationChangesDuringReadiness() throws {
         let preparedEngine = OSAllocatedUnfairLock<AVAudioEngine?>(initialState: nil)
         let postedConfigurationChange = OSAllocatedUnfairLock(initialState: false)

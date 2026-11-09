@@ -551,6 +551,11 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
     private let recoveryRouteChangeDebounce: TimeInterval
     private let startupReadinessTimeout: TimeInterval
     private let signalRequiredStartupReadinessTimeout: TimeInterval
+    /// True while the device-attempt loop runs the fresh-engine retry for an
+    /// implicit Bluetooth default. The first engine already held the link for
+    /// the long window, so the retry targets a tap that never attached to the
+    /// settled graph (issue #1009) and gets the normal window.
+    private var currentAttemptUsesShortReadinessWindow = false
     private let bluetoothInputState: @Sendable (AudioDeviceID) -> Bool?
     private let callbackUptimeProvider: @Sendable () -> UInt64
     private let callbackStallTimeout: TimeInterval
@@ -1048,14 +1053,20 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         }
 
         var pendingAttempts = attempts.map {
-            (attempt: $0, defaultInputGeneration: defaultInputGenerationBeforeRouteSnapshot)
+            (
+                attempt: $0,
+                defaultInputGeneration: defaultInputGenerationBeforeRouteSnapshot,
+                usesShortReadinessWindow: false
+            )
         }
         var retriedImplicitBluetoothDefault = false
         var lastError: Error?
+        defer { currentAttemptUsesShortReadinessWindow = false }
         while !pendingAttempts.isEmpty {
             activeLifecycleDiagnosticsLocked?.enter(.routeResolution)
             let pendingAttempt = pendingAttempts.removeFirst()
             let attempt = pendingAttempt.attempt
+            currentAttemptUsesShortReadinessWindow = pendingAttempt.usesShortReadinessWindow
             guard startupCancellationGeneration.withLock({ $0 }) == cancellationGeneration else {
                 throw AVAudioEngineMicrophonePlatformError.startupCancelled
             }
@@ -1182,7 +1193,8 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
                         pendingAttempts.insert(
                             (
                                 attempt: refreshedSystemDefault,
-                                defaultInputGeneration: refreshedDefaultInputGeneration
+                                defaultInputGeneration: refreshedDefaultInputGeneration,
+                                usesShortReadinessWindow: true
                             ),
                             at: 0
                         )
@@ -1858,6 +1870,7 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
     ) throws {
         switch tapHandler.waitForUsableBuffer(
             timeout: tapHandler.startupRequiresNonZeroSignal()
+                && !currentAttemptUsesShortReadinessWindow
                 ? signalRequiredStartupReadinessTimeout
                 : startupReadinessTimeout,
             isCancelled: {

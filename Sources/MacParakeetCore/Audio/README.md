@@ -385,7 +385,8 @@ bring-up, so every retry lost the same race (issue #1238). If an
 implicit System Default attempt resolves to Bluetooth and times out, the
 platform rebuilds the route snapshot and gives the refreshed implicit default
 one fresh-engine attempt before advancing to the built-in fallback (issue
-#1009). The retry stays implicit, follows a concurrent macOS default-input
+#1009). That retry uses the one-second window, since the first engine already
+held the link for the long one. The retry stays implicit, follows a concurrent macOS default-input
 change, and is limited to one per engine configure attempt, including recovery.
 Named raw capture accepts valid digital silence from the explicitly opened
 microphone, so capture starts and Stop is available before the user speaks.
