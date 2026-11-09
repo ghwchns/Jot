@@ -435,6 +435,86 @@ final class MicrophoneEnginePlatformStartupReadinessTests: XCTestCase {
         XCTAssertEqual(invocationCount.withLock { $0 }, 1)
     }
 
+    /// Issue #1238: a cold AirPods mic delivers exact zeros while its SCO link
+    /// comes up. The same engine must stay up long enough to receive the first
+    /// real audio instead of being torn down at the short readiness deadline.
+    func testColdBluetoothDefaultKeepsEngineUntilFirstNonzeroBuffer() throws {
+        let invocationCount = OSAllocatedUnfairLock(initialState: 0)
+        let zeroBuffer = UncheckedSendableAudioPCMBuffer(makeStartupReadinessBuffer())
+        let speechBuffer = UncheckedSendableAudioPCMBuffer(
+            makeStartupReadinessBuffer(nonZero: true)
+        )
+        let platform = AVAudioEngineMicrophonePlatform(
+            deviceAttemptsBuilder: {
+                [.implicitSystemDefault(resolvedDeviceID: 10)]
+            },
+            inputDeviceSetter: { _, _ in true },
+            startupReadinessTimeout: 0.05,
+            signalRequiredStartupReadinessTimeout: 3,
+            bluetoothInputState: { $0 == 10 },
+            engineStarter: { _, _, _, tapHandler in
+                let invocation = invocationCount.withLock { value -> Int in
+                    value += 1
+                    return value
+                }
+                guard invocation == 1 else { return }
+                tapHandler(zeroBuffer.buffer, AVAudioTime(hostTime: 1))
+                DispatchQueue.global().asyncAfter(deadline: .now() + 0.3) {
+                    tapHandler(speechBuffer.buffer, AVAudioTime(hostTime: 2))
+                }
+            }
+        )
+        defer { platform.stopEngine() }
+
+        try platform.configureAndStart(
+            vpioEnabled: false,
+            bufferSize: 256,
+            tapHandler: { _, _ in }
+        )
+
+        XCTAssertTrue(platform.isEngineRunning)
+        XCTAssertEqual(invocationCount.withLock { $0 }, 1, "No teardown before the SCO link delivers audio")
+        XCTAssertEqual(platform.lastSucceededAttempt, .implicitSystemDefault(resolvedDeviceID: 10))
+    }
+
+    func testNonBluetoothRouteWithoutBuffersKeepsShortReadinessWindow() throws {
+        let invocationCount = OSAllocatedUnfairLock(initialState: 0)
+        let buffer = UncheckedSendableAudioPCMBuffer(makeStartupReadinessBuffer())
+        let platform = AVAudioEngineMicrophonePlatform(
+            deviceAttemptsBuilder: {
+                [
+                    MeetingInputDeviceAttempt(source: .selected(uid: "usb"), deviceID: 10),
+                    .implicitSystemDefault(resolvedDeviceID: 20),
+                ]
+            },
+            inputDeviceSetter: { _, _ in true },
+            startupReadinessTimeout: 0.05,
+            signalRequiredStartupReadinessTimeout: 5,
+            bluetoothInputState: { _ in false },
+            engineStarter: { _, _, _, tapHandler in
+                let invocation = invocationCount.withLock { value -> Int in
+                    value += 1
+                    return value
+                }
+                if invocation == 2 {
+                    tapHandler(buffer.buffer, AVAudioTime(hostTime: 1))
+                }
+            }
+        )
+        defer { platform.stopEngine() }
+
+        let startedAt = Date()
+        try platform.configureAndStart(
+            vpioEnabled: false,
+            bufferSize: 256,
+            tapHandler: { _, _ in }
+        )
+
+        XCTAssertLessThan(Date().timeIntervalSince(startedAt), 2.5)
+        XCTAssertEqual(invocationCount.withLock { $0 }, 2)
+        XCTAssertEqual(platform.lastSucceededAttempt, .implicitSystemDefault(resolvedDeviceID: 20))
+    }
+
     func testPreparedStartFallsBackWhenConfigurationChangesDuringReadiness() throws {
         let preparedEngine = OSAllocatedUnfairLock<AVAudioEngine?>(initialState: nil)
         let postedConfigurationChange = OSAllocatedUnfairLock(initialState: false)

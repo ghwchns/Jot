@@ -376,7 +376,12 @@ A2DP, they can explicitly select the Mac's built-in mic in Settings. The idle
 warm-capture suppression above remains separate and still prevents Instant
 Dictation from holding a Bluetooth input open between active sessions.
 Each active attempt is accepted only after a usable tap buffer arrives. A route
-that starts but produces no usable buffer is torn down after one second. If an
+that starts but produces no usable buffer is torn down after one second, or
+after four seconds when exact-zero PCM cannot satisfy readiness (Bluetooth or
+unresolved topology, below). A cold AirPods mic delivers zeros while bluetoothd
+brings up its SCO link, typically for 1-2 s and longer while a Bluetooth
+keyboard or trackpad is connected; tearing down at one second restarts that
+bring-up, so every retry lost the same race (issue #1238). If an
 implicit System Default attempt resolves to Bluetooth and times out, the
 platform rebuilds the route snapshot and gives the refreshed implicit default
 one fresh-engine attempt before advancing to the built-in fallback (issue

@@ -284,6 +284,10 @@ final class MutableMicrophoneTapHandler: @unchecked Sendable {
         state.withLock { $0.tracksStartupConfiguration = false }
     }
 
+    func startupRequiresNonZeroSignal() -> Bool {
+        state.withLock { $0.requiresNonZeroSignal }
+    }
+
     @discardableResult
     func setStartupRequiresNonZeroSignal(_ enabled: Bool) -> Bool {
         state.withLock { state in
@@ -526,6 +530,15 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
     /// This bounds first-buffer readiness after native setup returns. It does
     /// not impose a deadline on synchronous Core Audio setup/start calls.
     private static let defaultStartupReadinessTimeout: TimeInterval = 1
+    /// Bluetooth and unresolved routes must show nonzero PCM before startup
+    /// commits. A cold AirPods mic first switches into its capture profile:
+    /// bluetoothd brings up the SCO link (adding 500 ms sniff delays while a
+    /// Bluetooth keyboard or trackpad is connected) and the tap receives exact
+    /// zeros until audio arrives, typically 1-2 s after start (issue #1238).
+    /// Tearing the engine down at one second restarts that bring-up, so these
+    /// routes keep the same engine running for longer before the fresh-engine
+    /// retry.
+    private static let defaultSignalRequiredStartupReadinessTimeout: TimeInterval = 4
     /// Tap callbacks normally arrive many times per second. Five seconds is
     /// long enough to ignore route-settle jitter while matching the existing
     /// recorder heartbeat cadence that exposed the frozen callback count.
@@ -537,6 +550,7 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
     private let recoveryRetryDelays: [TimeInterval]
     private let recoveryRouteChangeDebounce: TimeInterval
     private let startupReadinessTimeout: TimeInterval
+    private let signalRequiredStartupReadinessTimeout: TimeInterval
     private let bluetoothInputState: @Sendable (AudioDeviceID) -> Bool?
     private let callbackUptimeProvider: @Sendable () -> UInt64
     private let callbackStallTimeout: TimeInterval
@@ -674,6 +688,7 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         self.recoveryRetryDelays = Self.defaultRecoveryRetryDelays
         self.recoveryRouteChangeDebounce = Self.defaultRecoveryRouteChangeDebounce
         self.startupReadinessTimeout = Self.defaultStartupReadinessTimeout
+        self.signalRequiredStartupReadinessTimeout = Self.defaultSignalRequiredStartupReadinessTimeout
         self.bluetoothInputState = { AudioDeviceManager.bluetoothInputState($0) }
         self.callbackUptimeProvider = { DispatchTime.now().uptimeNanoseconds }
         self.callbackStallTimeout = Self.defaultCallbackStallTimeout
@@ -689,6 +704,7 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         recoveryRetryDelays: [TimeInterval] = AVAudioEngineMicrophonePlatform.defaultRecoveryRetryDelays,
         recoveryRouteChangeDebounce: TimeInterval = AVAudioEngineMicrophonePlatform.defaultRecoveryRouteChangeDebounce,
         startupReadinessTimeout: TimeInterval = 0,
+        signalRequiredStartupReadinessTimeout: TimeInterval? = nil,
         bluetoothInputState: @escaping @Sendable (AudioDeviceID) -> Bool? = {
             AudioDeviceManager.bluetoothInputState($0)
         },
@@ -714,6 +730,10 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         self.recoveryRetryDelays = recoveryRetryDelays.map { max(0, $0) }
         self.recoveryRouteChangeDebounce = max(0, recoveryRouteChangeDebounce)
         self.startupReadinessTimeout = max(0, startupReadinessTimeout)
+        self.signalRequiredStartupReadinessTimeout = max(
+            0,
+            signalRequiredStartupReadinessTimeout ?? startupReadinessTimeout
+        )
         self.bluetoothInputState = bluetoothInputState
         self.callbackUptimeProvider = callbackUptimeProvider
         self.callbackStallTimeout = max(0, callbackStallTimeout)
@@ -1837,7 +1857,9 @@ public final class AVAudioEngineMicrophonePlatform: MicrophoneEnginePlatform, @u
         cancellationGeneration: UInt64
     ) throws {
         switch tapHandler.waitForUsableBuffer(
-            timeout: startupReadinessTimeout,
+            timeout: tapHandler.startupRequiresNonZeroSignal()
+                ? signalRequiredStartupReadinessTimeout
+                : startupReadinessTimeout,
             isCancelled: {
                 self.startupCancellationGeneration.withLock { $0 } != cancellationGeneration
             }
